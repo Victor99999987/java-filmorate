@@ -26,49 +26,6 @@ public class ValidationFilmTest {
                 LocalDate.of(1967, 9, 25), 125);
     }
 
-//    @Test
-//    public void nameIsEmpty() {
-//        film.setName("");
-//        ValidationFilmException e = Assertions.assertThrows(
-//                ValidationFilmException.class,
-//                () -> filmController.create(film));
-//        Assertions.assertEquals("Название не может быть пустым", e.getMessage());
-//    }
-//
-//    @Test
-//    public void nameIsNull() {
-//        film.setName(null);
-//        ValidationFilmException e = Assertions.assertThrows(
-//                ValidationFilmException.class,
-//                () -> filmController.create(film));
-//        Assertions.assertEquals("Название не может быть пустым", e.getMessage());
-//    }
-//
-//    @Test
-//    public void nameIsBlank() {
-//        film.setName("       ");
-//        ValidationFilmException e = Assertions.assertThrows(
-//                ValidationFilmException.class,
-//                () -> filmController.create(film));
-//        Assertions.assertEquals("Название не может быть пустым", e.getMessage());
-//    }
-//
-//    @Test
-//    public void descriptionIsLong() {
-//        film.setDescription("очень длинное описание. очень длинное описание. очень длинное описание. " +
-//                            "очень длинное описание. очень длинное описание. очень длинное описание. " +
-//                            "очень длинное описание. очень длинное описание. очень длинное описание. " +
-//                            "очень длинное описание. очень длинное описание. очень длинное описание. " +
-//                            "очень длинное описание. очень длинное описание. очень длинное описание. " +
-//                            "очень длинное описание. очень длинное описание. очень длинное описание. " +
-//                            "очень длинное описание. очень длинное описание. очень длинное описание. ");
-//        ValidationFilmException e = Assertions.assertThrows(
-//                ValidationFilmException.class,
-//                () -> filmController.create(film));
-//        Assertions.assertEquals("Максимальная длина описания — 200 символов", e.getMessage());
-//        Assertions.assertTrue(film.getDescription().length()>200);
-//    }
-//
     @Test
     public void releaseDateIsOld() {
         film.setReleaseDate(LocalDate.of(1800, 1, 1));
@@ -77,21 +34,6 @@ public class ValidationFilmTest {
                 () -> filmController.create(film));
         Assertions.assertEquals("дата релиза — не раньше 28 декабря 1895 года", e.getMessage());
     }
-
-//    @Test
-//    public void durationIsNegative() throws Exception {
-//        film.setDuration(-12);
-//        this.mockMvc.perform(MockMvcRequestBuilders.post("/films").
-//                accept(MediaType.TEXT_HTML).
-//                param("duration", "-12")).
-//                andExpect(status().isBadRequest()).andDo(print());
-
-        //filmController.create(film);
-        // MethodArgumentNotValidException e = Assertions.assertThrows(
-        //        MethodArgumentNotValidException.class,
-        //        () -> filmController.create(film));
-        //Assertions.assertEquals("продолжительность фильма должна быть положительной", e.getMessage());
-//    }
 
     @Test
     public void unknownFilm() {
