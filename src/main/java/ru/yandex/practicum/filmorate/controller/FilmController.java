@@ -1,23 +1,25 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationFilmException;
-import ru.yandex.practicum.filmorate.exception.ValidationUserException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
+@Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {
     private final Set<Film> films = new HashSet<>();
     private int generateId = 0;
-    private final static Logger log = LoggerFactory.getLogger(FilmController.class);
 
     private int getGenerateId() {
         return ++generateId;
@@ -29,10 +31,10 @@ public class FilmController {
     }
 
     @PostMapping
-    public Film create(@RequestBody Film film) {
+    public Film create(@NotNull @Valid @RequestBody Film film) {
         validationFilm(film);
         film.setId(getGenerateId());
-        if(films.contains(film)) {
+        if (films.contains(film)) {
             log.info("ValidationFilmException: Такой фильм уже есть");
             throw new ValidationFilmException("Такой фильм уже есть");
         }
@@ -42,9 +44,9 @@ public class FilmController {
     }
 
     @PutMapping
-    public Film update(@RequestBody Film film) {
+    public Film update(@NotNull @Valid @RequestBody Film film) {
         validationFilm(film);
-        if(!films.contains(film)) {
+        if (!films.contains(film)) {
             log.info("FilmNotFoundException: Нет такого фильма в базе");
             throw new FilmNotFoundException("Нет такого фильма в базе");
         }
@@ -55,29 +57,10 @@ public class FilmController {
     }
 
     private void validationFilm(Film film) {
-        if(film == null) {
-            log.info("ValidationFilmException: Пустой запрос");
-            throw new ValidationFilmException("Пустой запрос");
-        }
-        String name = film.getName();
-        if (name == null || name.isEmpty() || name.isBlank()) {
-            log.info("ValidationFilmException: Название не может быть пустым");
-            throw new ValidationFilmException("Название не может быть пустым");
-        }
-        String description = film.getDescription();
-        if (description.length() > 200) {
-            log.info("ValidationFilmException: Максимальная длина описания — 200 символов");
-            throw new ValidationFilmException("Максимальная длина описания — 200 символов");
-        }
         LocalDate releaseDate = film.getReleaseDate();
         if (releaseDate.isBefore(LocalDate.of(1895, 12, 28))) {
             log.info("ValidationFilmException: дата релиза — не раньше 28 декабря 1895 года");
             throw new ValidationFilmException("дата релиза — не раньше 28 декабря 1895 года");
-        }
-        int duration = film.getDuration();
-        if (duration < 0) {
-            log.info("ValidationFilmException: продолжительность фильма должна быть положительной");
-            throw new ValidationFilmException("продолжительность фильма должна быть положительной");
         }
     }
 

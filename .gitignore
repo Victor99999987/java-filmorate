@@ -10,7 +10,10 @@
 hs_err_pid*
 out/
 **/target/
-.mvn
+.mvn/
+*.cmd
+mvnw
+
 
 ### STS ###
 .apt_generated
