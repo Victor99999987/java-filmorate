@@ -28,13 +28,13 @@ public class UserController {
     }
 
     @PostMapping
-    public User add(@NotNull @Valid @RequestBody User User) {
-        return userService.add(User);
+    public User add(@NotNull @Valid @RequestBody User user) {
+        return userService.add(user);
     }
 
     @PutMapping
-    public User update(@NotNull @Valid @RequestBody User User) {
-        return userService.update(User);
+    public User update(@NotNull @Valid @RequestBody User user) {
+        return userService.update(user);
     }
 
     @DeleteMapping("/{id}")
