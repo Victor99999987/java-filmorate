@@ -8,12 +8,14 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.Past;
 import javax.validation.constraints.Pattern;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
 public class User {
     @EqualsAndHashCode.Include
-    private Integer id;
+    private Long id;
     @Pattern(regexp = "^[A-Za-z0-9-.]+$", message = "Логин не может быть пустым и содержать пробелы")
     @EqualsAndHashCode.Exclude
     private String login;
@@ -25,4 +27,6 @@ public class User {
     @Past(message = "дата рождения не может быть в будущем")
     @EqualsAndHashCode.Exclude
     private LocalDate birthday;
+    @EqualsAndHashCode.Exclude
+    private final Set<Long> friends = new HashSet<>();
 }

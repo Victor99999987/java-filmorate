@@ -8,12 +8,14 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
 public class Film {
     @EqualsAndHashCode.Include
-    private Integer id;
+    private Long id;
     @NotBlank(message = "Название фильма не может быть пустым")
     @EqualsAndHashCode.Exclude
     private String name;
@@ -25,4 +27,6 @@ public class Film {
     @Positive
     @EqualsAndHashCode.Exclude
     private int duration;
+    @EqualsAndHashCode.Exclude
+    private final Set<Long> likes = new HashSet<>();
 }
