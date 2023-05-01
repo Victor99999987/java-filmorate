@@ -48,7 +48,7 @@ class FilmorateApplicationTests {
     }
 
     @Test
-    public void AddUser() {
+    public void addUser() {
         User inputUser = User.builder()
                 .login("darkula")
                 .name("kid darkula")
@@ -141,7 +141,7 @@ class FilmorateApplicationTests {
     }
 
     @Test
-    public void AddGenre() {
+    public void addGenre() {
         Genre genre = Genre.builder()
                 .name("комедия")
                 .build();
@@ -218,7 +218,7 @@ class FilmorateApplicationTests {
     }
 
     @Test
-    public void AddMpa() {
+    public void addMpa() {
         Mpa mpa = Mpa.builder()
                 .name("P")
                 .build();
@@ -295,8 +295,8 @@ class FilmorateApplicationTests {
     }
 
     @Test
-    public void AddFilm() {
-        AddMpa();
+    public void addFilm() {
+        addMpa();
         Film film = Film.builder()
                 .name("Робокоп")
                 .description("Погибшего полицейского возвращают к жизни в качестве киборга")
@@ -314,7 +314,7 @@ class FilmorateApplicationTests {
 
     @Test
     public void getFilm() {
-        AddMpa();
+        addMpa();
         Film inputFilm = Film.builder()
                 .name("Робокоп")
                 .description("Погибшего полицейского возвращают к жизни в качестве киборга")
@@ -339,7 +339,7 @@ class FilmorateApplicationTests {
 
     @Test
     public void updateFilm() {
-        AddMpa();
+        addMpa();
         Film inputFilm = Film.builder()
                 .name("Робокоп")
                 .description("Погибшего полицейского возвращают к жизни в качестве киборга")
@@ -360,7 +360,7 @@ class FilmorateApplicationTests {
 
     @Test
     public void deleteFilm() {
-        AddMpa();
+        addMpa();
         Film inputFilm = Film.builder()
                 .name("Робокоп")
                 .description("Погибшего полицейского возвращают к жизни в качестве киборга")
@@ -378,7 +378,7 @@ class FilmorateApplicationTests {
 
     @Test
     public void getAllFilm() {
-        AddMpa();
+        addMpa();
         Film inputFilm = Film.builder()
                 .name("Робокоп")
                 .description("Погибшего полицейского возвращают к жизни в качестве киборга")
