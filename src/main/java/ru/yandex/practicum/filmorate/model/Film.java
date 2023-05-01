@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.model;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -13,6 +14,7 @@ import java.util.Set;
 
 @Data
 @AllArgsConstructor
+@Builder
 public class Film {
     @EqualsAndHashCode.Include
     private Long id;
@@ -29,4 +31,8 @@ public class Film {
     private int duration;
     @EqualsAndHashCode.Exclude
     private final Set<Long> likes = new HashSet<>();
+    @EqualsAndHashCode.Exclude
+    private final Set<Genre> genres = new HashSet<>();
+    @EqualsAndHashCode.Exclude
+    private Mpa mpa;
 }
