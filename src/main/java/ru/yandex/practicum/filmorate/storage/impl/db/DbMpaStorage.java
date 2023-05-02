@@ -19,18 +19,16 @@ import java.util.List;
 @Slf4j
 @Component
 @Qualifier("DbMpaStorage")
-public class DbMpaStorage implements Storage<Mpa> {
-
-    private final JdbcTemplate jdbcTemplate;
+public class DbMpaStorage extends DbStorage implements Storage<Mpa> {
 
     public DbMpaStorage(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        super(jdbcTemplate);
     }
 
     @Override
     public List<Mpa> getAll() {
         List<Mpa> result = new ArrayList<>();
-        String sql = "select * from mpa";
+        String sql = "select id, name from mpa";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
         while (sqlRowSet.next()) {
             result.add(makeMpa(sqlRowSet));
@@ -38,16 +36,9 @@ public class DbMpaStorage implements Storage<Mpa> {
         return result;
     }
 
-    private Mpa makeMpa(SqlRowSet rs) {
-        return Mpa.builder()
-                .id(rs.getLong("id"))
-                .name(rs.getString("name"))
-                .build();
-    }
-
     @Override
     public Mpa getById(Long id) {
-        String sql = "select * from mpa where id = ?";
+        String sql = "select id, name from mpa where id = ?";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (!sqlRowSet.first()) {
             log.info(String.format("MpaNotFoundException: Не найден mpa-рейтинг с id=%d", id));
@@ -87,5 +78,12 @@ public class DbMpaStorage implements Storage<Mpa> {
         String sql = "update mpa set name = ? where id = ?";
         jdbcTemplate.update(sql, mpa.getName(), mpa.getId());
         return mpa;
+    }
+
+    private Mpa makeMpa(SqlRowSet rs) {
+        return Mpa.builder()
+                .id(rs.getLong("id"))
+                .name(rs.getString("name"))
+                .build();
     }
 }

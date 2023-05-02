@@ -22,18 +22,17 @@ import java.util.List;
 @Slf4j
 @Component
 @Qualifier("DbFilmStorage")
-public class DbFilmStorage implements Storage<Film> {
-
-    private final JdbcTemplate jdbcTemplate;
+public class DbFilmStorage extends DbStorage implements Storage<Film> {
 
     public DbFilmStorage(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        super(jdbcTemplate);
     }
 
     @Override
     public List<Film> getAll() {
         List<Film> result = new ArrayList<>();
-        String sql = "select films.*, mpa.name as mpa_name from films join mpa on films.mpa_id = mpa.id";
+        String sql = "select f.id, f.name, f.description, f.releasedate, f.duration, f.mpa_id, m.name as mpa_name " +
+                "from films as f join mpa as m on f.mpa_id = m.id";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
         while (sqlRowSet.next()) {
             result.add(makeFilm(sqlRowSet));
@@ -41,36 +40,10 @@ public class DbFilmStorage implements Storage<Film> {
         return result;
     }
 
-    private Film makeFilm(SqlRowSet rs) {
-        Mpa mpa = new Mpa(rs.getLong("mpa_id"), rs.getString(7));
-
-        Film film = Film.builder()
-                .id(rs.getLong("id"))
-                .name(rs.getString("name"))
-                .description(rs.getString("description"))
-                .releaseDate(rs.getDate("releaseDate").toLocalDate())
-                .duration(rs.getInt("duration"))
-                .mpa(mpa)
-                .build();
-
-        String sql = "select g.* from genres as g join films_genres as fg on fg.genres_id = g.id where fg.films_id = ?";
-        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, film.getId());
-        while (rowSet.next()) {
-            film.getGenres().add(new Genre(rowSet.getLong("id"), rowSet.getString("name")));
-        }
-
-        sql = "select likes.users_id from likes where films_id = ?";
-        rowSet = jdbcTemplate.queryForRowSet(sql, film.getId());
-        while (rowSet.next()) {
-            film.getLikes().add(rowSet.getLong("users_id"));
-        }
-
-        return film;
-    }
-
     @Override
     public Film getById(Long id) {
-        String sql = "select films.*, mpa.name as mpa_name from films join mpa on films.mpa_id=mpa.id where films.id = ?";
+        String sql = "select f.id, f.name, f.description, f.releasedate, f.duration, f.mpa_id, m.name as mpa_name " +
+                "from films as f join mpa as m on f.mpa_id=m.id where f.id = ?";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (!sqlRowSet.first()) {
             log.info(String.format("FilmNotFoundException: Не найден фильм с id=%d", id));
@@ -133,4 +106,33 @@ public class DbFilmStorage implements Storage<Film> {
         }
         return film;
     }
+
+    private Film makeFilm(SqlRowSet rs) {
+        Mpa mpa = new Mpa(rs.getLong("mpa_id"), rs.getString(7));
+
+        Film film = Film.builder()
+                .id(rs.getLong("id"))
+                .name(rs.getString("name"))
+                .description(rs.getString("description"))
+                .releaseDate(rs.getDate("releaseDate").toLocalDate())
+                .duration(rs.getInt("duration"))
+                .mpa(mpa)
+                .build();
+
+        String sql = "select g.id, g.name " +
+                "from genres as g join films_genres as fg on fg.genres_id = g.id where fg.films_id = ?";
+        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, film.getId());
+        while (rowSet.next()) {
+            film.getGenres().add(new Genre(rowSet.getLong("id"), rowSet.getString("name")));
+        }
+
+        sql = "select likes.users_id from likes where films_id = ?";
+        rowSet = jdbcTemplate.queryForRowSet(sql, film.getId());
+        while (rowSet.next()) {
+            film.getLikes().add(rowSet.getLong("users_id"));
+        }
+
+        return film;
+    }
+
 }

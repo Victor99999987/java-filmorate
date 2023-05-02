@@ -20,18 +20,16 @@ import java.util.List;
 @Slf4j
 @Component
 @Qualifier("DbUserStorage")
-public class DbUserStorage implements Storage<User> {
-
-    private final JdbcTemplate jdbcTemplate;
+public class DbUserStorage extends DbStorage implements Storage<User> {
 
     public DbUserStorage(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        super(jdbcTemplate);
     }
 
     @Override
     public List<User> getAll() {
         List<User> result = new ArrayList<>();
-        String sql = "select * from users";
+        String sql = "select id, login, email, name, birthday from users";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
         while (sqlRowSet.next()) {
             result.add(makeUser(sqlRowSet));
@@ -39,27 +37,9 @@ public class DbUserStorage implements Storage<User> {
         return result;
     }
 
-    private User makeUser(SqlRowSet rs) {
-        User user = User.builder()
-                .id(rs.getLong("id"))
-                .login(rs.getString("login"))
-                .email(rs.getString("email"))
-                .name(rs.getString("name"))
-                .birthday(rs.getDate("birthday").toLocalDate())
-                .build();
-
-        String sql = "select friendship.friends_id from friendship where users_id = ?";
-        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, rs.getLong("id"));
-        while (rowSet.next()) {
-            user.getFriends().add(rowSet.getLong("friends_id"));
-        }
-
-        return user;
-    }
-
     @Override
     public User getById(Long id) {
-        String sql = "select * from users where id = ?";
+        String sql = "select id, login, email, name, birthday from users where id = ?";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (!sqlRowSet.first()) {
             log.info(String.format("UserNotFoundException: Не найден пользователь с id=%d", id));
@@ -117,4 +97,23 @@ public class DbUserStorage implements Storage<User> {
         }
         return user;
     }
+
+    private User makeUser(SqlRowSet rs) {
+        User user = User.builder()
+                .id(rs.getLong("id"))
+                .login(rs.getString("login"))
+                .email(rs.getString("email"))
+                .name(rs.getString("name"))
+                .birthday(rs.getDate("birthday").toLocalDate())
+                .build();
+
+        String sql = "select friendship.friends_id from friendship where users_id = ?";
+        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, rs.getLong("id"));
+        while (rowSet.next()) {
+            user.getFriends().add(rowSet.getLong("friends_id"));
+        }
+
+        return user;
+    }
+
 }

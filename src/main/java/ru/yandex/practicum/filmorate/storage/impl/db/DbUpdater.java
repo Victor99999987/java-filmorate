@@ -6,12 +6,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Qualifier("DbUpdater")
-public class DbUpdater {
-
-    private final JdbcTemplate jdbcTemplate;
+public class DbUpdater extends DbStorage {
 
     public DbUpdater(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        super(jdbcTemplate);
     }
 
     public void update() {
