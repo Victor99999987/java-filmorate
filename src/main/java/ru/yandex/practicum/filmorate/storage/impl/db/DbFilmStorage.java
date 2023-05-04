@@ -120,9 +120,9 @@ public class DbFilmStorage extends DbStorage implements Storage<Film> {
 
         sql = "insert into likes (films_id, users_id) values(?, ?)";
         jdbcTemplate.batchUpdate(sql, film.getLikes(), film.getLikes().size(),
-                (ps, user_id) -> {
+                (ps, usersId) -> {
                     ps.setLong(1, film.getId());
-                    ps.setLong(2, user_id);
+                    ps.setLong(2, usersId);
                 });
 
         return film;
@@ -147,15 +147,15 @@ public class DbFilmStorage extends DbStorage implements Storage<Film> {
                 films.put(id, film);
             }
 
-            Long genres_id = rs.getLong("genres_id");
+            Long genresId = rs.getLong("genres_id");
             if (!rs.wasNull()) {
-                Genre genre = new Genre(genres_id, rs.getString(9));//"genres_name"
+                Genre genre = new Genre(genresId, rs.getString(9));//"genres_name"
                 films.get(id).getGenres().add(genre);
             }
 
-            Long users_id = rs.getLong("users_id");
+            Long usersId = rs.getLong("users_id");
             if (!rs.wasNull()) {
-                films.get(id).getLikes().add(users_id);
+                films.get(id).getLikes().add(usersId);
             }
         }
         return new ArrayList<>(films.values());

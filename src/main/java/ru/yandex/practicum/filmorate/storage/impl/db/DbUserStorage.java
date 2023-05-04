@@ -70,9 +70,9 @@ public class DbUserStorage extends DbStorage implements Storage<User> {
 
         sql = "insert into friendship (users_id, friends_id, confirmed) values(?, ?, ?)";
         jdbcTemplate.batchUpdate(sql, user.getFriends(), user.getFriends().size(),
-                (ps, friend_id) -> {
+                (ps, friendsId) -> {
                     ps.setLong(1, user.getId());
-                    ps.setLong(2, friend_id);
+                    ps.setLong(2, friendsId);
                     ps.setBoolean(3, false);
                 });
 
@@ -98,17 +98,17 @@ public class DbUserStorage extends DbStorage implements Storage<User> {
 
         sql = "insert into friendship (users_id, friends_id, confirmed) values(?, ?, ?)";
         jdbcTemplate.batchUpdate(sql, user.getFriends(), user.getFriends().size(),
-                (ps, friend_id) -> {
+                (ps, friendsId) -> {
                     ps.setLong(1, user.getId());
-                    ps.setLong(2, friend_id);
+                    ps.setLong(2, friendsId);
                     ps.setBoolean(3, false);
                 });
 
         sql = "update friendship set confirmed = ? where users_id = ? and friends_id = ?";
         jdbcTemplate.batchUpdate(sql, user.getFriends(), user.getFriends().size(),
-                (ps, friend_id) -> {
+                (ps, friendsId) -> {
                     ps.setBoolean(1, true);
-                    ps.setLong(2, friend_id);
+                    ps.setLong(2, friendsId);
                     ps.setLong(3, user.getId());
                 });
 
@@ -131,9 +131,9 @@ public class DbUserStorage extends DbStorage implements Storage<User> {
                 users.put(id, user);
             }
 
-            Long friends_id = rs.getLong("friends_id");
+            Long friendsId = rs.getLong("friends_id");
             if (!rs.wasNull()) {
-                users.get(id).getFriends().add(friends_id);
+                users.get(id).getFriends().add(friendsId);
             }
         }
         return new ArrayList<>(users.values());
