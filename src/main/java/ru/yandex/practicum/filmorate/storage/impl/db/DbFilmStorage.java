@@ -17,7 +17,9 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -30,26 +32,33 @@ public class DbFilmStorage extends DbStorage implements Storage<Film> {
 
     @Override
     public List<Film> getAll() {
-        List<Film> result = new ArrayList<>();
-        String sql = "select f.id, f.name, f.description, f.releasedate, f.duration, f.mpa_id, m.name as mpa_name " +
-                "from films as f join mpa as m on f.mpa_id = m.id";
+        String sql = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
+                "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id \n" +
+                "from films as f \n" +
+                "left join mpa as m on f.mpa_id = m.id\n" +
+                "left join films_genres as fg on fg.films_id = f.id\n" +
+                "left join genres as g on fg.genres_id = g.id\n" +
+                "left join likes as l on l.films_id = f.id";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
-        while (sqlRowSet.next()) {
-            result.add(makeFilm(sqlRowSet));
-        }
-        return result;
+        return makeFilms(sqlRowSet);
     }
 
     @Override
     public Film getById(Long id) {
-        String sql = "select f.id, f.name, f.description, f.releasedate, f.duration, f.mpa_id, m.name as mpa_name " +
-                "from films as f join mpa as m on f.mpa_id=m.id where f.id = ?";
+        String sql = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
+                "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id \n" +
+                "from films as f \n" +
+                "left join mpa as m on f.mpa_id = m.id\n" +
+                "left join films_genres as fg on fg.films_id = f.id\n" +
+                "left join genres as g on fg.genres_id = g.id\n" +
+                "left join likes as l on l.films_id = f.id where f.id = ?";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (!sqlRowSet.first()) {
             log.info(String.format("FilmNotFoundException: Не найден фильм с id=%d", id));
             throw new FilmNotFoundException(String.format("Не найден фильм с id=%d", id));
         }
-        return makeFilm(sqlRowSet);
+        sqlRowSet.beforeFirst();
+        return makeFilms(sqlRowSet).get(0);
     }
 
     @Override
@@ -71,10 +80,14 @@ public class DbFilmStorage extends DbStorage implements Storage<Film> {
             return preparedStatement;
         }, generatedKeyHolder);
         film.setId(generatedKeyHolder.getKey().longValue());
-        for (Genre genre : film.getGenres()) {
-            sql = "insert into films_genres (films_id, genres_id) values(?, ?)";
-            jdbcTemplate.update(sql, film.getId(), genre.getId());
-        }
+
+        sql = "insert into films_genres (films_id, genres_id) values(?, ?)";
+        jdbcTemplate.batchUpdate(sql, film.getGenres(), film.getGenres().size(),
+                (ps, genre) -> {
+                    ps.setLong(1, film.getId());
+                    ps.setLong(2, genre.getId());
+                });
+
         return film;
     }
 
@@ -94,45 +107,58 @@ public class DbFilmStorage extends DbStorage implements Storage<Film> {
                 film.getDuration(), film.getMpa().getId(), film.getId());
         sql = "delete from films_genres where films_id = ?";
         jdbcTemplate.update(sql, film.getId());
-        for (Genre genre : film.getGenres()) {
-            sql = "insert into films_genres (films_id, genres_id) values(?, ?)";
-            jdbcTemplate.update(sql, film.getId(), genre.getId());
-        }
+
+        sql = "insert into films_genres (films_id, genres_id) values(?, ?)";
+        jdbcTemplate.batchUpdate(sql, film.getGenres(), film.getGenres().size(),
+                (ps, genre) -> {
+                    ps.setLong(1, film.getId());
+                    ps.setLong(2, genre.getId());
+                });
+
         sql = "delete from likes where films_id = ?";
         jdbcTemplate.update(sql, film.getId());
-        for (Long like : film.getLikes()) {
-            sql = "insert into likes (films_id, users_id) values(?, ?)";
-            jdbcTemplate.update(sql, film.getId(), like);
-        }
+
+        sql = "insert into likes (films_id, users_id) values(?, ?)";
+        jdbcTemplate.batchUpdate(sql, film.getLikes(), film.getLikes().size(),
+                (ps, user_id) -> {
+                    ps.setLong(1, film.getId());
+                    ps.setLong(2, user_id);
+                });
+
         return film;
     }
 
-    private Film makeFilm(SqlRowSet rs) {
-        Mpa mpa = new Mpa(rs.getLong("mpa_id"), rs.getString(7));
+    private List<Film> makeFilms(SqlRowSet rs) {
+        Map<Long, Film> films = new HashMap<>();
+        while (rs.next()) {
+            Long id = rs.getLong("id");
 
-        Film film = Film.builder()
-                .id(rs.getLong("id"))
-                .name(rs.getString("name"))
-                .description(rs.getString("description"))
-                .releaseDate(rs.getDate("releaseDate").toLocalDate())
-                .duration(rs.getInt("duration"))
-                .mpa(mpa)
-                .build();
+            if (!films.containsKey(id)) {
+                Mpa mpa = new Mpa(rs.getLong("mpa_id"), rs.getString(7));//"mpa_name"
 
-        String sql = "select g.id, g.name " +
-                "from genres as g join films_genres as fg on fg.genres_id = g.id where fg.films_id = ?";
-        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, film.getId());
-        while (rowSet.next()) {
-            film.getGenres().add(new Genre(rowSet.getLong("id"), rowSet.getString("name")));
+                Film film = Film.builder()
+                        .id(rs.getLong("id"))
+                        .name(rs.getString("name"))
+                        .description(rs.getString("description"))
+                        .releaseDate(rs.getDate("releaseDate").toLocalDate())
+                        .duration(rs.getInt("duration"))
+                        .mpa(mpa)
+                        .build();
+                films.put(id, film);
+            }
+
+            Long genres_id = rs.getLong("genres_id");
+            if (!rs.wasNull()) {
+                Genre genre = new Genre(genres_id, rs.getString(9));//"genres_name"
+                films.get(id).getGenres().add(genre);
+            }
+
+            Long users_id = rs.getLong("users_id");
+            if (!rs.wasNull()) {
+                films.get(id).getLikes().add(users_id);
+            }
         }
-
-        sql = "select likes.users_id from likes where films_id = ?";
-        rowSet = jdbcTemplate.queryForRowSet(sql, film.getId());
-        while (rowSet.next()) {
-            film.getLikes().add(rowSet.getLong("users_id"));
-        }
-
-        return film;
+        return new ArrayList<>(films.values());
     }
 
 }
