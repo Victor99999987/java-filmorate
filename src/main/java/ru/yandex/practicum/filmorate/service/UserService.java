@@ -1,12 +1,12 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UserAlreadyExistException;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.Storage;
 
 import java.util.HashSet;
 import java.util.List;
@@ -15,9 +15,12 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class UserService {
-    private final UserStorage userStorage;
+    private final Storage<User> userStorage;
+
+    public UserService(@Qualifier("DbUserStorage") Storage<User> userStorage) {
+        this.userStorage = userStorage;
+    }
 
     public List<User> getAll() {
         return userStorage.getAll();
@@ -63,8 +66,6 @@ public class UserService {
         }
         user.getFriends().add(friendId);
         userStorage.update(user);
-        friend.getFriends().add(id);
-        userStorage.update(friend);
         return user;
     }
 
@@ -77,8 +78,6 @@ public class UserService {
         }
         user.getFriends().remove(friendId);
         userStorage.update(user);
-        friend.getFriends().remove(id);
-        userStorage.update(friend);
         return user;
     }
 
