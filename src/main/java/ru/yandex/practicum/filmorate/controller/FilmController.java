@@ -60,4 +60,10 @@ public class FilmController {
     public List<Film> getPopularFilms(@RequestParam(defaultValue = "10") Long count) {
         return filmService.getPopularFilms(count);
     }
+
+    @GetMapping("/common")
+    public List<Film> getCommonFilms(@RequestParam("userId") long userId, @RequestParam("friendId") long friendId) {
+        log.info("Запрос на получение списка общих фильмов пользователей id = {} и id = {}", userId, friendId);
+        return filmService.getCommonFilms(userId, friendId);
+    }
 }
