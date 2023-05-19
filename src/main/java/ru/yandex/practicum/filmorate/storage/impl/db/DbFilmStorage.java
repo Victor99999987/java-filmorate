@@ -11,7 +11,7 @@ import ru.yandex.practicum.filmorate.exception.ValidationFilmException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.storage.FilmsStorage;
+import ru.yandex.practicum.filmorate.storage.Storage;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -24,7 +24,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @Qualifier("DbFilmStorage")
-public class DbFilmStorage extends DbStorage implements FilmsStorage {
+public class DbFilmStorage extends DbStorage implements Storage<Film> {
 
     public DbFilmStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
@@ -126,19 +126,6 @@ public class DbFilmStorage extends DbStorage implements FilmsStorage {
                 });
 
         return film;
-    }
-
-    public List<Film> getFilmsThatUserLikes(long userId) {
-        String sql = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
-                "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id \n" +
-                "from films as f \n" +
-                "left join mpa as m on f.mpa_id = m.id\n" +
-                "left join films_genres as fg on fg.films_id = f.id\n" +
-                "left join genres as g on fg.genres_id = g.id\n" +
-                "left join likes as l on l.films_id = f.id " +
-                "where f.id in (select films_id from likes where users_id = ?)";
-        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, userId);
-        return makeFilms(sqlRowSet);
     }
 
     private List<Film> makeFilms(SqlRowSet rs) {

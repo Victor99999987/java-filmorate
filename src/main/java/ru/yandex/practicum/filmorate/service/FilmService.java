@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationFilmException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.FilmsStorage;
 import ru.yandex.practicum.filmorate.storage.Storage;
 
 import java.time.LocalDate;
@@ -19,10 +18,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class FilmService {
-    private final FilmsStorage filmStorage;
+    private final Storage<Film> filmStorage;
     private final Storage<User> userStorage;
 
-    public FilmService(@Qualifier("DbFilmStorage") FilmsStorage filmStorage,
+    public FilmService(@Qualifier("DbFilmStorage") Storage<Film> filmStorage,
                        @Qualifier("DbUserStorage") Storage<User> userStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
@@ -92,11 +91,9 @@ public class FilmService {
     public List<Film> getCommonFilms(long userId, long friendId) {
         userStorage.getById(userId);
         userStorage.getById(friendId);
-        List<Film> usersFilms = filmStorage.getFilmsThatUserLikes(userId);
-        List<Film> friendsFilm = filmStorage.getFilmsThatUserLikes(friendId);
-        usersFilms.retainAll(friendsFilm);
         log.info("Получили список общих фильмов пользователей id = {} и id = {}", userId, friendId);
-        return usersFilms.stream()
+        return filmStorage.getAll().stream()
+                .filter(film -> film.getLikes().contains(userId) && film.getLikes().contains(friendId))
                 .sorted(Comparator.comparingLong(film -> -1 * film.getLikes().size()))
                 .collect(Collectors.toList());
     }
