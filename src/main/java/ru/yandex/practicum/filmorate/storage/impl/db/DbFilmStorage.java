@@ -12,7 +12,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.FilmsStorage;
-import ru.yandex.practicum.filmorate.storage.Storage;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
