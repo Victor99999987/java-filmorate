@@ -8,7 +8,7 @@ import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationFilmException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.CommonFilmsStorage;
+import ru.yandex.practicum.filmorate.storage.FilmsStorage;
 import ru.yandex.practicum.filmorate.storage.Storage;
 
 import java.time.LocalDate;
@@ -20,16 +20,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class FilmService {
-    private final Storage<Film> filmStorage;
+    private final FilmsStorage filmStorage;
     private final Storage<User> userStorage;
-    private final CommonFilmsStorage commonStorage;
 
-    public FilmService(@Qualifier("DbFilmStorage") Storage<Film> filmStorage,
-                       @Qualifier("DbUserStorage") Storage<User> userStorage,
-                       CommonFilmsStorage commonStorage) {
+    public FilmService(@Qualifier("DbFilmStorage") FilmsStorage filmStorage,
+                       @Qualifier("DbUserStorage") Storage<User> userStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
-        this.commonStorage = commonStorage;
     }
 
     public List<Film> getAll() {
@@ -96,16 +93,11 @@ public class FilmService {
     public List<Film> getCommonFilms(long userId, long friendId) {
         userStorage.getById(userId);
         userStorage.getById(friendId);
-        List<Film> commonFilms = new ArrayList<>();
-        List<Film> usersFilms = commonStorage.getFilmsThatUserLikes(userId);
-        List<Film> friendsFilm = commonStorage.getFilmsThatUserLikes(friendId);
-        for (Film film : usersFilms) {
-            if (friendsFilm.contains(film)) {
-                commonFilms.add(film);
-            }
-        }
+        List<Film> usersFilms = filmStorage.getFilmsThatUserLikes(userId);
+        List<Film> friendsFilm = filmStorage.getFilmsThatUserLikes(friendId);
+        usersFilms.retainAll(friendsFilm);
         log.info("Получили список общих фильмов пользователей id = {} и id = {}", userId, friendId);
-        return commonFilms.stream()
+        return usersFilms.stream()
                 .sorted(Comparator.comparingLong(film -> -1 * film.getLikes().size()))
                 .collect(Collectors.toList());
     }

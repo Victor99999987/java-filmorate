@@ -11,7 +11,7 @@ import ru.yandex.practicum.filmorate.exception.ValidationFilmException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.storage.CommonFilmsStorage;
+import ru.yandex.practicum.filmorate.storage.FilmsStorage;
 import ru.yandex.practicum.filmorate.storage.Storage;
 
 import java.sql.Date;
@@ -25,7 +25,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @Qualifier("DbFilmStorage")
-public class DbFilmStorage extends DbStorage implements CommonFilmsStorage, Storage<Film> {
+public class DbFilmStorage extends DbStorage implements FilmsStorage {
 
     public DbFilmStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
