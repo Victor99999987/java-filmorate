@@ -137,7 +137,7 @@ public class DbFilmStorage extends DbStorage implements CommonFilmsStorage, Stor
                 "left join films_genres as fg on fg.films_id = f.id\n" +
                 "left join genres as g on fg.genres_id = g.id\n" +
                 "left join likes as l on l.films_id = f.id " +
-                "where users_id = ?";
+                "where f.id in (select films_id from likes where users_id = ?)";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, userId);
         return makeFilms(sqlRowSet);
     }
