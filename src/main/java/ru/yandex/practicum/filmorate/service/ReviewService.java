@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ReviewNotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
@@ -15,9 +14,9 @@ import java.util.Optional;
 public class ReviewService {
     private final ReviewStorage reviewStorage;
 
-public ReviewService(ReviewStorage reviewStorage) {
-    this.reviewStorage = reviewStorage;
-}
+    public ReviewService(ReviewStorage reviewStorage) {
+        this.reviewStorage = reviewStorage;
+    }
 
     public Review create(Review review) {
         Review createdReview = reviewStorage.createReview(review);
@@ -48,10 +47,10 @@ public ReviewService(ReviewStorage reviewStorage) {
         Collection<Review> reviews;
         if (filmId == null) {
             reviews = reviewStorage.findReviewByCount(count);
-            log.info("Возвращено {} отзывов.",reviews.size());
+            log.info("Возвращено {} отзывов.", reviews.size());
         } else {
             reviews = reviewStorage.findReviewByIdFilm(filmId, count);
-            log.info("Возвращено {} отзывов для фильма с ID = {}.", reviews.size(),filmId);
+            log.info("Возвращено {} отзывов для фильма с ID = {}.", reviews.size(), filmId);
         }
         return reviews;
 

@@ -4,35 +4,30 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ReviewNotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationUserException;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.storage.ReviewStorage;
 
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
-
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
-import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
-import ru.yandex.practicum.filmorate.storage.ReviewStorage;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
 @Repository
 @Qualifier("DbReviewStorage")
 public class DbReviewStorage extends DbStorage implements ReviewStorage {
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
     public DbReviewStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
-        namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(jdbcTemplate);
     }
 
     private final static String FIND_BY_ID = "SELECT * FROM REVIEWS WHERE REVIEW_ID = ?";
@@ -49,18 +44,8 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     private final static String DELETE_LIKE_REVIEW = "DELETE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
     private final static String UPDATE_USEFUL_PLUS = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
     private final static String UPDATE_USEFUL_MINUS = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
-    private final static String FIND_USER = "SELECT USER_ID FROM USERS WHERE USER_ID = ?";
-    private final static String FIND_FILM = "SELECT FILM_ID FROM FILMS WHERE FILM_ID = ?";
-
-    public static final RowMapper<Review> REVIEW_ROW_MAPPER = (ResultSet resultSet, int rowNum) -> Review.builder()
-            .reviewId(resultSet.getLong("review_id"))
-            .content(resultSet.getString("content"))
-            .isPositive(resultSet.getBoolean("is_positive"))
-            .userId(resultSet.getLong("user_id"))
-            .filmId(resultSet.getLong("film_id"))
-            .build();
-
-
+    private final static String FIND_USER = "SELECT ID FROM USERS WHERE ID = ?";
+    private final static String FIND_FILM = "SELECT ID FROM FILMS WHERE ID = ?";
 
     private Review buildReview(ResultSet rs) throws SQLException {
         return Review.builder()
@@ -89,29 +74,19 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Review createReview(Review review) {
-        System.out.println("Это метод создания ревью в БД");
+        findFilm(review.getFilmId());
+        findUser(review.getUserId());
         GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
-        System.out.println("Сгенерирован кихолдер = " + generatedKeyHolder);
         String sql = "INSERT INTO REVIEWS (FILM_ID, USER_ID, CONTENT, IS_POSITIVE) values(?, ?, ?, ?)";
-        System.out.println("Создан шаблон строки SQL = " + sql);
         jdbcTemplate.update(conn -> {
-            System.out.println("Внутри лямбды");
             PreparedStatement preparedStatement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            System.out.println("возвращен сгенерированный ключ — " + preparedStatement);
             preparedStatement.setLong(1, review.getFilmId());
-            System.out.println("В стейтмент записан филм айди = " + review.getFilmId());
             preparedStatement.setLong(2, review.getUserId());
-            System.out.println("В стейтмент записан юзер айди = " + review.getUserId());
             preparedStatement.setString(3, review.getContent());
-            System.out.println("В стейтмент записан контент = " + review.getContent());
-            preparedStatement.setBoolean(4, review.isPositive());
-            System.out.println("В стейтмент записан позитив = " + review.isPositive());
+            preparedStatement.setBoolean(4, review.getIsPositive());
             return preparedStatement;
         }, generatedKeyHolder);
-        System.out.println("Вышли из лямбды");
         review.setReviewId(Objects.requireNonNull(generatedKeyHolder.getKey()).longValue());
-        System.out.println("В объект ревью записан айдишник = " + review.getReviewId());
-        System.out.println("Сейчас будет возвращено ревью: " + review);
         return review;
     }
 
@@ -119,7 +94,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     public Review updateReview(Review review) {
         boolean reply = jdbcTemplate.update(UPDATE_REVIEW,
                 review.getContent(),
-                review.isPositive(),
+                review.getIsPositive(),
                 review.getReviewId()) < 1;
         if (reply) {
             throw new ReviewNotFoundException("Ошибка при обновлении отзыва с ID = " + review.getReviewId() + ".");
@@ -139,7 +114,8 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     @Override
     public Optional<Review> findReviewById(long id) {
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(FIND_BY_ID, (rs, rowNum) -> buildReview(rs), id));
+            Review review = jdbcTemplate.queryForObject(FIND_BY_ID, (rs, rowNum) -> buildReview(rs), id);
+            return Optional.ofNullable(review);
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
