@@ -30,11 +30,11 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         super(jdbcTemplate);
     }
 
-    private final String INSERT_LIKE_REVIEW = "INSERT INTO REVIEWS_LIKES (REVIEW_ID, USER_ID, IS_LIKE) " +
+    private final String insertLikeReview = "INSERT INTO REVIEWS_LIKES (REVIEW_ID, USER_ID, IS_LIKE) " +
             "VALUES (?, ?, ?)";
-    private final String DELETE_LIKE_REVIEW = "DELETE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
-    private final String UPDATE_USEFUL_PLUS = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
-    private final String UPDATE_USEFUL_MINUS = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
+    private final String deleteLikeReview = "DELETE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
+    private final String updateUsefulPlus = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
+    private final String updateUsefulMinus = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
 
     private Review buildReview(ResultSet rs) throws SQLException {
         return Review.builder()
@@ -48,16 +48,16 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     }
 
     private void findUser(long userId) {
-        String FIND_USER = "SELECT ID FROM USERS WHERE ID = ?";
-        SqlRowSet rsUser = jdbcTemplate.queryForRowSet(FIND_USER, userId);
+        String findUser = "SELECT ID FROM USERS WHERE ID = ?";
+        SqlRowSet rsUser = jdbcTemplate.queryForRowSet(findUser, userId);
         if (!rsUser.next()) {
             throw new UserNotFoundException("Не найден пользователь с ID = " + userId);
         }
     }
 
     private void findFilm(long filmId) {
-        String FIND_FILM = "SELECT ID FROM FILMS WHERE ID = ?";
-        SqlRowSet rsFilm = jdbcTemplate.queryForRowSet(FIND_FILM, filmId);
+        String findFilm = "SELECT ID FROM FILMS WHERE ID = ?";
+        SqlRowSet rsFilm = jdbcTemplate.queryForRowSet(findFilm, filmId);
         if (!rsFilm.next()) {
             throw new FilmNotFoundException("Не найден фильм с ID = " + filmId);
         }
@@ -83,8 +83,8 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Review updateReview(Review review) {
-        String UPDATE_REVIEW = "UPDATE REVIEWS SET CONTENT = ?, IS_POSITIVE = ? WHERE REVIEW_ID = ?";
-        boolean reply = jdbcTemplate.update(UPDATE_REVIEW,
+        String updateReview = "UPDATE REVIEWS SET CONTENT = ?, IS_POSITIVE = ? WHERE REVIEW_ID = ?";
+        boolean reply = jdbcTemplate.update(updateReview,
                 review.getContent(),
                 review.getIsPositive(),
                 review.getReviewId()) < 1;
@@ -96,8 +96,8 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public void deleteReview(long id) {
-        String DELETE_REVIEW = "DELETE FROM REVIEWS WHERE REVIEW_ID = ?";
-        if (jdbcTemplate.update(DELETE_REVIEW, id) < 1) {
+        String deleteReview = "DELETE FROM REVIEWS WHERE REVIEW_ID = ?";
+        if (jdbcTemplate.update(deleteReview, id) < 1) {
             throw new ReviewNotFoundException("Ошибка при удалении отзыва с ID = " + id + ".");
         } else {
             log.info("Отзыв с ID = {} удален.", id);
@@ -107,8 +107,8 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     @Override
     public Optional<Review> findReviewById(long id) {
         try {
-            String FIND_BY_ID = "SELECT * FROM REVIEWS WHERE REVIEW_ID = ?";
-            Review review = jdbcTemplate.queryForObject(FIND_BY_ID, (rs, rowNum) -> buildReview(rs), id);
+            String findById = "SELECT * FROM REVIEWS WHERE REVIEW_ID = ?";
+            Review review = jdbcTemplate.queryForObject(findById, (rs, rowNum) -> buildReview(rs), id);
             return Optional.ofNullable(review);
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
@@ -117,47 +117,47 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Collection<Review> findReviewByCount(int count) {
-        String FIND_ALL_REVIEWS = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC LIMIT ?";
-        return jdbcTemplate.query(FIND_ALL_REVIEWS, (rs, rowNum) -> buildReview(rs), count);
+        String findAllReviews = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC LIMIT ?";
+        return jdbcTemplate.query(findAllReviews, (rs, rowNum) -> buildReview(rs), count);
     }
 
     @Override
     public Collection<Review> findReviewByIdFilm(Long filmId, int count) {
-        String FIND_ALL_REVIEWS_BY_FILM = "SELECT * FROM REVIEWS WHERE FILM_ID = ? " +
+        String findAllReviewsByFilm = "SELECT * FROM REVIEWS WHERE FILM_ID = ? " +
                 "ORDER BY USEFUL DESC LIMIT ?";
-        return jdbcTemplate.query(FIND_ALL_REVIEWS_BY_FILM, (rs, rowNum) -> buildReview(rs), filmId, count);
+        return jdbcTemplate.query(findAllReviewsByFilm, (rs, rowNum) -> buildReview(rs), filmId, count);
     }
 
     @Override
     public void addLike(long reviewId, long userId) {
         findUser(userId);
-        jdbcTemplate.update(INSERT_LIKE_REVIEW, reviewId, userId, true);
-        jdbcTemplate.update(UPDATE_USEFUL_PLUS, reviewId);
+        jdbcTemplate.update(insertLikeReview, reviewId, userId, true);
+        jdbcTemplate.update(updateUsefulPlus, reviewId);
     }
 
     @Override
     public void addDislike(long reviewId, long userId) {
         findUser(userId);
-        jdbcTemplate.update(INSERT_LIKE_REVIEW, reviewId, userId, false);
-        jdbcTemplate.update(UPDATE_USEFUL_MINUS, reviewId);
+        jdbcTemplate.update(insertLikeReview, reviewId, userId, false);
+        jdbcTemplate.update(updateUsefulMinus, reviewId);
     }
 
     @Override
     public void removeLike(long reviewId, long userId) {
-        if (jdbcTemplate.update(DELETE_LIKE_REVIEW, reviewId, userId) < 1) {
+        if (jdbcTemplate.update(deleteLikeReview, reviewId, userId) < 1) {
             log.info("Ошибка при удалении лайка для ревью ID = {} от пользователя с ID = {}.", reviewId, userId);
         } else {
-            jdbcTemplate.update(UPDATE_USEFUL_MINUS, reviewId);
+            jdbcTemplate.update(updateUsefulMinus, reviewId);
             log.info("Пользователь с ID = {} удалил лайк для ревью ID = {}.", userId, reviewId);
         }
     }
 
     @Override
     public void removeDislike(long reviewId, long userId) {
-        if (jdbcTemplate.update(DELETE_LIKE_REVIEW, reviewId, userId) < 1) {
+        if (jdbcTemplate.update(deleteLikeReview, reviewId, userId) < 1) {
             log.info("Ошибка при удалении дизлайка для ревью ID = {} от пользователя с ID = {}.", reviewId, userId);
         } else {
-            jdbcTemplate.update(UPDATE_USEFUL_PLUS, reviewId);
+            jdbcTemplate.update(updateUsefulPlus, reviewId);
             log.info("Пользователь с ID = {} удалил дизлайк для ревью ID = {}.", userId, reviewId);
         }
     }
