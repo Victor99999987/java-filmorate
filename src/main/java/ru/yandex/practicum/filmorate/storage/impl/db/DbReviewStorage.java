@@ -30,22 +30,11 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         super(jdbcTemplate);
     }
 
-    private final static String FIND_BY_ID = "SELECT * FROM REVIEWS WHERE REVIEW_ID = ?";
-    private final static String FIND_ALL_REVIEWS = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC LIMIT ?";
-    private final static String FIND_ALL_REVIEWS_BY_FILM = "SELECT * FROM REVIEWS WHERE FILM_ID = ? " +
-            "ORDER BY USEFUL DESC LIMIT ?";
-
-    private final static String UPDATE_REVIEW = "UPDATE REVIEWS SET CONTENT = ?, IS_POSITIVE = ? WHERE REVIEW_ID = ?";
-
-    private final static String DELETE_REVIEW = "DELETE FROM REVIEWS WHERE REVIEW_ID = ?";
-
-    private final static String INSERT_LIKE_REVIEW = "INSERT INTO REVIEWS_LIKES (REVIEW_ID, USER_ID, IS_LIKE) " +
+    private final String INSERT_LIKE_REVIEW = "INSERT INTO REVIEWS_LIKES (REVIEW_ID, USER_ID, IS_LIKE) " +
             "VALUES (?, ?, ?)";
-    private final static String DELETE_LIKE_REVIEW = "DELETE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
-    private final static String UPDATE_USEFUL_PLUS = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
-    private final static String UPDATE_USEFUL_MINUS = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
-    private final static String FIND_USER = "SELECT ID FROM USERS WHERE ID = ?";
-    private final static String FIND_FILM = "SELECT ID FROM FILMS WHERE ID = ?";
+    private final String DELETE_LIKE_REVIEW = "DELETE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
+    private final String UPDATE_USEFUL_PLUS = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
+    private final String UPDATE_USEFUL_MINUS = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
 
     private Review buildReview(ResultSet rs) throws SQLException {
         return Review.builder()
@@ -59,6 +48,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     }
 
     private void findUser(long userId) {
+        String FIND_USER = "SELECT ID FROM USERS WHERE ID = ?";
         SqlRowSet rsUser = jdbcTemplate.queryForRowSet(FIND_USER, userId);
         if (!rsUser.next()) {
             throw new UserNotFoundException("Не найден пользователь с ID = " + userId);
@@ -66,6 +56,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     }
 
     private void findFilm(long filmId) {
+        String FIND_FILM = "SELECT ID FROM FILMS WHERE ID = ?";
         SqlRowSet rsFilm = jdbcTemplate.queryForRowSet(FIND_FILM, filmId);
         if (!rsFilm.next()) {
             throw new FilmNotFoundException("Не найден фильм с ID = " + filmId);
@@ -92,6 +83,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Review updateReview(Review review) {
+        String UPDATE_REVIEW = "UPDATE REVIEWS SET CONTENT = ?, IS_POSITIVE = ? WHERE REVIEW_ID = ?";
         boolean reply = jdbcTemplate.update(UPDATE_REVIEW,
                 review.getContent(),
                 review.getIsPositive(),
@@ -104,6 +96,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public void deleteReview(long id) {
+        String DELETE_REVIEW = "DELETE FROM REVIEWS WHERE REVIEW_ID = ?";
         if (jdbcTemplate.update(DELETE_REVIEW, id) < 1) {
             throw new ReviewNotFoundException("Ошибка при удалении отзыва с ID = " + id + ".");
         } else {
@@ -114,6 +107,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     @Override
     public Optional<Review> findReviewById(long id) {
         try {
+            String FIND_BY_ID = "SELECT * FROM REVIEWS WHERE REVIEW_ID = ?";
             Review review = jdbcTemplate.queryForObject(FIND_BY_ID, (rs, rowNum) -> buildReview(rs), id);
             return Optional.ofNullable(review);
         } catch (EmptyResultDataAccessException e) {
@@ -123,11 +117,14 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Collection<Review> findReviewByCount(int count) {
+        String FIND_ALL_REVIEWS = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC LIMIT ?";
         return jdbcTemplate.query(FIND_ALL_REVIEWS, (rs, rowNum) -> buildReview(rs), count);
     }
 
     @Override
     public Collection<Review> findReviewByIdFilm(Long filmId, int count) {
+        String FIND_ALL_REVIEWS_BY_FILM = "SELECT * FROM REVIEWS WHERE FILM_ID = ? " +
+                "ORDER BY USEFUL DESC LIMIT ?";
         return jdbcTemplate.query(FIND_ALL_REVIEWS_BY_FILM, (rs, rowNum) -> buildReview(rs), filmId, count);
     }
 
