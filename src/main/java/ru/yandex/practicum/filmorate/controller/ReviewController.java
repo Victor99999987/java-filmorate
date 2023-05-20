@@ -23,15 +23,12 @@ public class ReviewController {
 
     @PostMapping
     public Review create(@Valid @NotNull @RequestBody Review review) {
-        Review createdReview = service.create(review);
-        System.out.println("Controller says: review was created! " + createdReview);
-        return createdReview;
+        return service.create(review);
     }
 
     @PutMapping
     public Review update(@Valid @NotNull @RequestBody Review review) {
-        service.update(review);
-        return review;
+        return service.update(review);
     }
 
     @DeleteMapping("{id}")
