@@ -8,6 +8,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ReviewIncorrectLikeException;
 import ru.yandex.practicum.filmorate.exception.ReviewNotFoundException;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
@@ -129,36 +130,87 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     }
 
     @Override
-    public void addLike(long reviewId, long userId) {
+    public Optional<Review> addLike(long reviewId, long userId) {
         findUser(userId);
-        jdbcTemplate.update(insertLikeReview, reviewId, userId, true);
-        jdbcTemplate.update(updateUsefulPlus, reviewId);
-    }
-
-    @Override
-    public void addDislike(long reviewId, long userId) {
-        findUser(userId);
-        jdbcTemplate.update(insertLikeReview, reviewId, userId, false);
-        jdbcTemplate.update(updateUsefulMinus, reviewId);
-    }
-
-    @Override
-    public void removeLike(long reviewId, long userId) {
-        if (jdbcTemplate.update(deleteLikeReview, reviewId, userId) < 1) {
-            log.info("Ошибка при удалении лайка для ревью ID = {} от пользователя с ID = {}.", reviewId, userId);
-        } else {
-            jdbcTemplate.update(updateUsefulMinus, reviewId);
-            log.info("Пользователь с ID = {} удалил лайк для ревью ID = {}.", userId, reviewId);
-        }
-    }
-
-    @Override
-    public void removeDislike(long reviewId, long userId) {
-        if (jdbcTemplate.update(deleteLikeReview, reviewId, userId) < 1) {
-            log.info("Ошибка при удалении дизлайка для ревью ID = {} от пользователя с ID = {}.", reviewId, userId);
+        verifyReview(reviewId);
+        if (jdbcTemplate.update(insertLikeReview, reviewId, userId, true) < 1) {
+            log.info("Ошибка при добавлении лайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
+            throw new ReviewIncorrectLikeException(String
+                    .format("Ошибка при добавлении лайка для отзыва ID = %d от пользователя с ID = %d.",
+                            reviewId, userId));
         } else {
             jdbcTemplate.update(updateUsefulPlus, reviewId);
-            log.info("Пользователь с ID = {} удалил дизлайк для ревью ID = {}.", userId, reviewId);
+            log.info("Пользователь с ID = {} добавил лайк для отзыва ID = {}.", userId, reviewId);
+            return findReviewById(reviewId);
         }
+    }
+
+    @Override
+    public Optional<Review> addDislike(long reviewId, long userId) {
+        findUser(userId);
+        verifyReview(reviewId);
+        if (jdbcTemplate.update(insertLikeReview, reviewId, userId, false) < 1) {
+            log.info("Ошибка при добавлении дизлайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
+            throw new ReviewIncorrectLikeException(String
+                    .format("Ошибка при добавлении дизлайка для отзыва ID = %d от пользователя с ID = %d.",
+                            reviewId, userId));
+        } else {
+            jdbcTemplate.update(updateUsefulMinus, reviewId);
+            log.info("Пользователь с ID = {} добавил дизлайк для отзыва ID = {}.", userId, reviewId);
+            return findReviewById(reviewId);
+        }
+    }
+
+    @Override
+    public Optional<Review> removeLike(long reviewId, long userId) {
+        findUser(userId);
+        verifyReview(reviewId);
+        if (verifyLike(reviewId, userId)) {
+            if (jdbcTemplate.update(deleteLikeReview, reviewId, userId) < 1) {
+                log.info("Ошибка при удалении лайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
+                throw new ReviewIncorrectLikeException(String
+                        .format("Ошибка при удалении лайка для отзыва ID = %d от пользователя с ID = %d.",
+                                reviewId, userId));
+            } else {
+                jdbcTemplate.update(updateUsefulMinus, reviewId);
+                log.info("Пользователь с ID = {} удалил лайк для отзыва ID = {}.", userId, reviewId);
+                return findReviewById(reviewId);
+            }
+        } else {
+            throw new ReviewIncorrectLikeException("Удаляемый лайк не является лайком.");
+        }
+    }
+
+    @Override
+    public Optional<Review> removeDislike(long reviewId, long userId) {
+        findUser(userId);
+        verifyReview(reviewId);
+        if (!verifyLike(reviewId, userId)) {
+            if (jdbcTemplate.update(deleteLikeReview, reviewId, userId) < 1) {
+                log.info("Ошибка при удалении дизлайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
+                throw new ReviewIncorrectLikeException(String
+                        .format("Ошибка при удалении дизлайка для отзыва ID = %d от пользователя с ID = %d.",
+                                reviewId, userId));
+            } else {
+                jdbcTemplate.update(updateUsefulPlus, reviewId);
+                log.info("Пользователь с ID = {} удалил дизлайк для отзыва ID = {}.", userId, reviewId);
+                return findReviewById(reviewId);
+            }
+        } else {
+            throw new ReviewIncorrectLikeException("Удаляемый дизлайк не является дизлайком.");
+        }
+    }
+
+    public void verifyReview(long reviewId) {
+        Optional<Review> reviewOptional = findReviewById(reviewId);
+        if (reviewOptional.isEmpty()) {
+            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
+        }
+    }
+
+    public boolean verifyLike(long reviewId, long userId) {
+        String verifyLike = "SELECT IS_LIKE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
+        return Boolean.TRUE
+                .equals(jdbcTemplate.queryForObject(verifyLike, Boolean.class, reviewId, userId));
     }
 }

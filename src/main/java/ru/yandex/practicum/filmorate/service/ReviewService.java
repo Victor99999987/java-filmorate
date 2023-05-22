@@ -35,12 +35,12 @@ public class ReviewService {
     }
 
     public Review findById(long id) {
-        Optional<Review> review = reviewStorage.findReviewById(id);
-        if (review.isEmpty()) {
+        Optional<Review> reviewOptional = reviewStorage.findReviewById(id);
+        if (reviewOptional.isEmpty()) {
             throw new ReviewNotFoundException("Отзыв с ID = " + id + " не найден.");
         }
-        log.info("Запрошен отзыв с ID = {}.", review.get().getReviewId());
-        return review.get();
+        log.info("Запрошен отзыв с ID = {}.", reviewOptional.get().getReviewId());
+        return reviewOptional.get();
     }
 
     public Collection<Review> findReviewByIdFilm(Long filmId, int count) {
@@ -56,22 +56,35 @@ public class ReviewService {
 
     }
 
-    public void addLike(long reviewId, long userId) {
-        reviewStorage.addLike(reviewId, userId);
-        log.info("Пользователь с ID = {} поставил лайк отзыву с ID = {}.", userId, reviewId);
+    public Review addLike(long reviewId, long userId) {
+        Optional<Review> reviewOptional = reviewStorage.addLike(reviewId, userId);
+        if (reviewOptional.isEmpty()) {
+            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
+        }
+        return reviewOptional.get();
     }
 
-    public void addDislike(long reviewId, long userId) {
-        reviewStorage.addDislike(reviewId, userId);
-        log.info("Пользователь с ID = {} поставил дизлайк отзыву с ID = {}.", userId, reviewId);
+    public Review addDislike(long reviewId, long userId) {
+        Optional<Review> reviewOptional = reviewStorage.addDislike(reviewId, userId);
+        if (reviewOptional.isEmpty()) {
+            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
+        }
+        return reviewOptional.get();
     }
 
-    public void removeLike(long reviewId, long userId) {
-        reviewStorage.removeLike(reviewId, userId);
-
+    public Review removeLike(long reviewId, long userId) {
+        Optional<Review> reviewOptional = reviewStorage.removeLike(reviewId, userId);
+        if (reviewOptional.isEmpty()) {
+            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
+        }
+        return reviewOptional.get();
     }
 
-    public void removeDislike(long reviewId, long userId) {
-        reviewStorage.removeDislike(reviewId, userId);
+    public Review removeDislike(long reviewId, long userId) {
+        Optional<Review> reviewOptional = reviewStorage.removeDislike(reviewId, userId);
+        if (reviewOptional.isEmpty()) {
+            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
+        }
+        return reviewOptional.get();
     }
 }

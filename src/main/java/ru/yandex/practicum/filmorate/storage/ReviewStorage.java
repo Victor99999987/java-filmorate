@@ -18,11 +18,11 @@ public interface ReviewStorage {
 
     Collection<Review> findReviewByIdFilm(Long filmId, int count);
 
-    void addLike(long reviewId, long userId);
+    Optional<Review> addLike(long reviewId, long userId);
 
-    void addDislike(long reviewId, long userId);
+    Optional<Review> addDislike(long reviewId, long userId);
 
-    void removeLike(long reviewId, long userId);
+    Optional<Review> removeLike(long reviewId, long userId);
 
-    void removeDislike(long reviewId, long userId);
+    Optional<Review> removeDislike(long reviewId, long userId);
 }

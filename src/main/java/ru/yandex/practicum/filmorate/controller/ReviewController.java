@@ -22,17 +22,17 @@ public class ReviewController {
     }
 
     @PostMapping
-    public Review create(@Valid @NotNull @RequestBody Review review) {
+    public Review createReview(@Valid @NotNull @RequestBody Review review) {
         return service.create(review);
     }
 
     @PutMapping
-    public Review update(@Valid @NotNull @RequestBody Review review) {
+    public Review updateReview(@Valid @NotNull @RequestBody Review review) {
         return service.update(review);
     }
 
     @DeleteMapping("{id}")
-    public void delete(@PathVariable long id) {
+    public void deleteReview(@PathVariable long id) {
         service.delete(id);
     }
 
@@ -42,30 +42,30 @@ public class ReviewController {
     }
 
     @GetMapping
-    public Collection<Review> findAllBiIdFilm(
+    public Collection<Review> findAllByIdFilm(
             @RequestParam(required = false) Long filmId,
             @RequestParam(defaultValue = "10", required = false) int count) {
         return service.findReviewByIdFilm(filmId, count);
     }
 
     @PutMapping("{id}/like/{userId}")
-    public void like(@PathVariable long id, @PathVariable long userId) {
-        service.addLike(id, userId);
+    public Review addLike(@PathVariable long id, @PathVariable long userId) {
+        return service.addLike(id, userId);
     }
 
     @PutMapping("{id}/dislike/{userId}")
-    public void dislike(@PathVariable long id, @PathVariable long userId) {
-        service.addDislike(id, userId);
+    public Review addDislike(@PathVariable long id, @PathVariable long userId) {
+        return service.addDislike(id, userId);
     }
 
     @DeleteMapping("{id}/like/{userId}")
-    public void deleteLike(@PathVariable long id, @PathVariable long userId) {
-        service.removeLike(id, userId);
+    public Review removeLike(@PathVariable long id, @PathVariable long userId) {
+        return service.removeLike(id, userId);
     }
 
     @DeleteMapping("{id}/dislike/{userId}")
-    public void deleteDislike(@PathVariable long id, @PathVariable long userId) {
-        service.removeDislike(id, userId);
+    public Review removeDislike(@PathVariable long id, @PathVariable long userId) {
+        return service.removeDislike(id, userId);
     }
 
 }
