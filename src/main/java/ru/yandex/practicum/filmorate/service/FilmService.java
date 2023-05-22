@@ -5,26 +5,29 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UserAlreadyExistException;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationFilmException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.Storage;
 
-import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
 public class FilmService {
     private final Storage<Film> filmStorage;
     private final Storage<User> userStorage;
+    private final Storage<Genre> genreStorage;
 
     public FilmService(@Qualifier("DbFilmStorage") Storage<Film> filmStorage,
-                       @Qualifier("DbUserStorage") Storage<User> userStorage) {
+                       @Qualifier("DbUserStorage") Storage<User> userStorage,
+                       @Qualifier("DbGenreStorage") Storage<Genre> genreStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
+        this.genreStorage = genreStorage;
     }
 
     public List<Film> getAll() {
@@ -36,16 +39,7 @@ public class FilmService {
     }
 
     public Film add(Film film) {
-        validationFilm(film);
         return filmStorage.add(film);
-    }
-
-    private void validationFilm(Film film) {
-        LocalDate releaseDate = film.getReleaseDate();
-        if (releaseDate.isBefore(LocalDate.of(1895, 12, 28))) {
-            log.info("ValidationFilmException: дата релиза — не раньше 28 декабря 1895 года");
-            throw new ValidationFilmException("дата релиза — не раньше 28 декабря 1895 года");
-        }
     }
 
     public Film remove(Long id) {
@@ -53,7 +47,6 @@ public class FilmService {
     }
 
     public Film update(Film film) {
-        validationFilm(film);
         return filmStorage.update(film);
     }
 
@@ -81,9 +74,15 @@ public class FilmService {
         return film;
     }
 
-    public List<Film> getPopularFilms(Long count) {
-        return filmStorage.getAll().stream()
-                .sorted(Comparator.comparingLong(film -> -1 * film.getLikes().size()))
+    public List<Film> getPopularFilms(Long count, Long genreId, Long year) {
+        Stream<Film> films = filmStorage.getAll().stream();
+        if (genreId != null) {
+            films = films.filter(film -> film.getGenres().contains(genreStorage.getById(genreId)));
+        }
+        if (year != null) {
+            films = films.filter(film -> film.getReleaseDate().getYear() == year);
+        }
+        return films.sorted(Comparator.comparingLong(film -> -1 * film.getLikes().size()))
                 .limit(count)
                 .collect(Collectors.toList());
     }
