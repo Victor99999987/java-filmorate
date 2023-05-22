@@ -87,4 +87,14 @@ public class FilmService {
                 .limit(count)
                 .collect(Collectors.toList());
     }
+
+    public List<Film> getCommonFilms(long userId, long friendId) {
+        userStorage.getById(userId);
+        userStorage.getById(friendId);
+        log.info("Получили список общих фильмов пользователей id = {} и id = {}", userId, friendId);
+        return filmStorage.getAll().stream()
+                .filter(film -> film.getLikes().contains(userId) && film.getLikes().contains(friendId))
+                .sorted(Comparator.comparingLong(film -> -1 * film.getLikes().size()))
+                .collect(Collectors.toList());
+    }
 }

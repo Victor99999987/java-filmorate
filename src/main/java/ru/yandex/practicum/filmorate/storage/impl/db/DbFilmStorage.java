@@ -160,5 +160,4 @@ public class DbFilmStorage extends DbStorage implements Storage<Film> {
         }
         return new ArrayList<>(films.values());
     }
-
 }
