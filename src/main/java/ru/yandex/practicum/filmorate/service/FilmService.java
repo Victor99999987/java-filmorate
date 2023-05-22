@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UserAlreadyExistException;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationFilmException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.User;
@@ -80,6 +81,10 @@ public class FilmService {
             films = films.filter(film -> film.getGenres().contains(genreStorage.getById(genreId)));
         }
         if (year != null) {
+            if (year < 1895) {
+                throw new ValidationFilmException("Первый фильм был снят в 1895 году, " +
+                        "проверьте параметры запроса.");
+            }
             films = films.filter(film -> film.getReleaseDate().getYear() == year);
         }
         return films.sorted(Comparator.comparingLong(film -> -1 * film.getLikes().size()))
