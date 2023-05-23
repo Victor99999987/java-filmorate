@@ -59,7 +59,7 @@ public class DbFilmStorage extends DbStorage implements Storage<Film>, FilmStora
                 "left join genres as g on fg.genres_id = g.id\n" +
                 "left join likes as l on l.films_id = f.id\n" +
                 "left join film_director fd on f.id=fd.film_id\n" +
-                "left join directors d on fd.director_id=d.DIRECTOR_ID\n"+
+                "left join directors d on fd.director_id=d.DIRECTOR_ID\n" +
                 "where f.id = ?";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (!sqlRowSet.first()) {
@@ -233,7 +233,7 @@ public class DbFilmStorage extends DbStorage implements Storage<Film>, FilmStora
                         "left join likes as l on l.films_id = f.id\n" +
                         "left join film_director fd on f.id=fd.film_id\n" +
                         "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n" +
-                        "WHERE dr.DIRECTOR_ID = ?\n"+
+                        "WHERE dr.DIRECTOR_ID = ?\n" +
                         "ORDER BY (f.RELEASEDATE)";
 
                 SqlRowSet sqlRowSetYear = jdbcTemplate.queryForRowSet(sqlYear, directorId);
@@ -252,7 +252,7 @@ public class DbFilmStorage extends DbStorage implements Storage<Film>, FilmStora
                         "left join likes as l on l.films_id = f.id\n" +
                         "left join film_director fd on f.id=fd.film_id\n" +
                         "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n" +
-                        "WHERE dr.DIRECTOR_ID = ?\n"+
+                        "WHERE dr.DIRECTOR_ID = ?\n" +
                         "GROUP BY f.ID " +
                         "ORDER BY likes";
 
