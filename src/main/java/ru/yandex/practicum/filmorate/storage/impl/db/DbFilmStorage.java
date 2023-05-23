@@ -97,13 +97,15 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
                     ps.setLong(2, genre.getId());
                 });
 
-        Set<Director> directors = film.getDirectors();
-        if (film.getDirectors() != null) {
-            for (Director director : directors) {
-                jdbcTemplate.update("INSERT INTO FILM_DIRECTOR (FILM_ID, DIRECTOR_ID) VALUES (?,?)",
-                        film.getId(), director.getId());
-            }
-        }
+        sql = "delete from film_director where film_id = ?";
+        jdbcTemplate.update(sql, film.getId());
+
+        sql = "insert into film_director (film_id, director_id) values(?, ?)";
+        jdbcTemplate.batchUpdate(sql, film.getDirectors(), film.getDirectors().size(),
+                (ps, director) -> {
+                    ps.setLong(1, film.getId());
+                    ps.setLong(2, director.getId());
+                });
         return film;
     }
 
