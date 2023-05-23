@@ -14,7 +14,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.Storage;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -24,7 +23,7 @@ import java.util.*;
 @Slf4j
 @Component
 @Qualifier("DbFilmStorage")
-public class DbFilmStorage extends DbStorage implements Storage<Film>, FilmStorage {
+public class DbFilmStorage extends DbStorage implements FilmStorage {
 
     public DbFilmStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);

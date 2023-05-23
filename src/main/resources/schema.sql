@@ -57,6 +57,6 @@ CREATE TABLE IF NOT EXISTS directors (
   );
 
 CREATE TABLE IF NOT EXISTS film_director (
-  film_id     integer not null,
-  director_id integer not null
+  film_id     integer not null REFERENCES films(id) on delete cascade,
+  director_id integer not null REFERENCES directors(director_id) on delete cascade
 );

@@ -86,7 +86,6 @@ public class DbDirectorStorage extends DbStorage implements Storage<Director> {
     @Override
     public Director remove(Long id) {
         Director director = getById(id);
-        jdbcTemplate.update("DELETE FROM film_director WHERE director_id = ?", id);
         jdbcTemplate.update("DELETE FROM directors WHERE DIRECTOR_ID = ?", id);
         log.info(String.format("%s %d %s", "Режиссер с id ", id, " успешно удален"));
         return director;
