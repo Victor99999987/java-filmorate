@@ -18,7 +18,6 @@ public class Review {
     private Long filmId;
     @NotNull
     private Long userId;
-    @NotNull(message = "У отзыва должен быть текст.")
     @NotBlank(message = "Текст отзыва не может быть пустым.")
     private String content;
     @NotNull

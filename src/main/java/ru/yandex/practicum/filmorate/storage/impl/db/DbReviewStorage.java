@@ -19,6 +19,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -37,37 +38,26 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     private final String updateUsefulPlus = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
     private final String updateUsefulMinus = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
 
-    private Review buildReview(ResultSet rs) throws SQLException {
-        return Review.builder()
-                .reviewId(rs.getLong("review_id"))
-                .content(rs.getString("content"))
-                .isPositive(rs.getBoolean("is_positive"))
-                .userId(rs.getLong("user_id"))
-                .filmId(rs.getLong("film_id"))
-                .useful(rs.getInt("useful"))
-                .build();
+    @Override
+    public List<Review> getAll() {
+        String findAllReviews = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC";
+        return jdbcTemplate.query(findAllReviews, (rs, rowNum) -> buildReview(rs));
     }
 
-    private void findUser(long userId) {
-        String findUser = "SELECT ID FROM USERS WHERE ID = ?";
-        SqlRowSet rsUser = jdbcTemplate.queryForRowSet(findUser, userId);
-        if (!rsUser.next()) {
-            throw new UserNotFoundException("Не найден пользователь с ID = " + userId);
-        }
-    }
-
-    private void findFilm(long filmId) {
-        String findFilm = "SELECT ID FROM FILMS WHERE ID = ?";
-        SqlRowSet rsFilm = jdbcTemplate.queryForRowSet(findFilm, filmId);
-        if (!rsFilm.next()) {
-            throw new FilmNotFoundException("Не найден фильм с ID = " + filmId);
+    @Override
+    public Review getById(Long id) {
+        try {
+            String findById = "SELECT * FROM REVIEWS WHERE REVIEW_ID = ?";
+            return jdbcTemplate.queryForObject(findById, (rs, rowNum) -> buildReview(rs), id);
+        } catch (EmptyResultDataAccessException e) {
+            throw new ReviewNotFoundException("Отзыв с ID = " + id + " не найден.");
         }
     }
 
     @Override
-    public Review createReview(Review review) {
-        findFilm(review.getFilmId());
-        findUser(review.getUserId());
+    public Review add(Review review) {
+        verifyFilm(review.getFilmId());
+        verifyUser(review.getUserId());
         GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
         String sql = "INSERT INTO REVIEWS (FILM_ID, USER_ID, CONTENT, IS_POSITIVE) values(?, ?, ?, ?)";
         jdbcTemplate.update(conn -> {
@@ -83,7 +73,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     }
 
     @Override
-    public Review updateReview(Review review) {
+    public Review update(Review review) {
         String updateReview = "UPDATE REVIEWS SET CONTENT = ?, IS_POSITIVE = ? WHERE REVIEW_ID = ?";
         boolean reply = jdbcTemplate.update(updateReview,
                 review.getContent(),
@@ -92,46 +82,38 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         if (reply) {
             throw new ReviewNotFoundException("Ошибка при обновлении отзыва с ID = " + review.getReviewId() + ".");
         }
-        return findReviewById(review.getReviewId()).get();
+        return getById(review.getReviewId());
     }
 
     @Override
-    public void deleteReview(long id) {
+    public Review remove(Long id) {
         String deleteReview = "DELETE FROM REVIEWS WHERE REVIEW_ID = ?";
+        Review review = getById(id);
         if (jdbcTemplate.update(deleteReview, id) < 1) {
             throw new ReviewNotFoundException("Ошибка при удалении отзыва с ID = " + id + ".");
         } else {
             log.info("Отзыв с ID = {} удален.", id);
         }
+        return review;
     }
 
     @Override
-    public Optional<Review> findReviewById(long id) {
-        try {
-            String findById = "SELECT * FROM REVIEWS WHERE REVIEW_ID = ?";
-            Review review = jdbcTemplate.queryForObject(findById, (rs, rowNum) -> buildReview(rs), id);
-            return Optional.ofNullable(review);
-        } catch (EmptyResultDataAccessException e) {
-            return Optional.empty();
-        }
-    }
-
-    @Override
-    public Collection<Review> findReviewByCount(int count) {
+    public Collection<Review> getReviewByCount(int count) {
         String findAllReviews = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC LIMIT ?";
         return jdbcTemplate.query(findAllReviews, (rs, rowNum) -> buildReview(rs), count);
     }
 
     @Override
-    public Collection<Review> findReviewByIdFilm(Long filmId, int count) {
+    public Collection<Review> getReviewByIdFilm(Long filmId, int count) {
         String findAllReviewsByFilm = "SELECT * FROM REVIEWS WHERE FILM_ID = ? " +
                 "ORDER BY USEFUL DESC LIMIT ?";
+        verifyFilm(filmId);
         return jdbcTemplate.query(findAllReviewsByFilm, (rs, rowNum) -> buildReview(rs), filmId, count);
     }
 
     @Override
     public Optional<Review> addLike(long reviewId, long userId) {
-        findUser(userId);
+        verifyUser(userId);
         verifyReview(reviewId);
         if (jdbcTemplate.update(insertLikeReview, reviewId, userId, true) < 1) {
             log.info("Ошибка при добавлении лайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
@@ -141,13 +123,13 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         } else {
             jdbcTemplate.update(updateUsefulPlus, reviewId);
             log.info("Пользователь с ID = {} добавил лайк для отзыва ID = {}.", userId, reviewId);
-            return findReviewById(reviewId);
+            return Optional.ofNullable(getById(reviewId));
         }
     }
 
     @Override
     public Optional<Review> addDislike(long reviewId, long userId) {
-        findUser(userId);
+        verifyUser(userId);
         verifyReview(reviewId);
         if (jdbcTemplate.update(insertLikeReview, reviewId, userId, false) < 1) {
             log.info("Ошибка при добавлении дизлайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
@@ -157,13 +139,13 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         } else {
             jdbcTemplate.update(updateUsefulMinus, reviewId);
             log.info("Пользователь с ID = {} добавил дизлайк для отзыва ID = {}.", userId, reviewId);
-            return findReviewById(reviewId);
+            return Optional.ofNullable(getById(reviewId));
         }
     }
 
     @Override
     public Optional<Review> removeLike(long reviewId, long userId) {
-        findUser(userId);
+        verifyUser(userId);
         verifyReview(reviewId);
         if (verifyLike(reviewId, userId)) {
             if (jdbcTemplate.update(deleteLikeReview, reviewId, userId) < 1) {
@@ -174,7 +156,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
             } else {
                 jdbcTemplate.update(updateUsefulMinus, reviewId);
                 log.info("Пользователь с ID = {} удалил лайк для отзыва ID = {}.", userId, reviewId);
-                return findReviewById(reviewId);
+                return Optional.ofNullable(getById(reviewId));
             }
         } else {
             throw new ReviewIncorrectLikeException("Удаляемый лайк не является лайком.");
@@ -183,7 +165,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Optional<Review> removeDislike(long reviewId, long userId) {
-        findUser(userId);
+        verifyUser(userId);
         verifyReview(reviewId);
         if (!verifyLike(reviewId, userId)) {
             if (jdbcTemplate.update(deleteLikeReview, reviewId, userId) < 1) {
@@ -194,15 +176,42 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
             } else {
                 jdbcTemplate.update(updateUsefulPlus, reviewId);
                 log.info("Пользователь с ID = {} удалил дизлайк для отзыва ID = {}.", userId, reviewId);
-                return findReviewById(reviewId);
+                return Optional.ofNullable(getById(reviewId));
             }
         } else {
             throw new ReviewIncorrectLikeException("Удаляемый дизлайк не является дизлайком.");
         }
     }
 
+    private Review buildReview(ResultSet rs) throws SQLException {
+        return Review.builder()
+                .reviewId(rs.getLong("review_id"))
+                .content(rs.getString("content"))
+                .isPositive(rs.getBoolean("is_positive"))
+                .userId(rs.getLong("user_id"))
+                .filmId(rs.getLong("film_id"))
+                .useful(rs.getInt("useful"))
+                .build();
+    }
+
+    private void verifyUser(long userId) {
+        String findUser = "SELECT ID FROM USERS WHERE ID = ?";
+        SqlRowSet rsUser = jdbcTemplate.queryForRowSet(findUser, userId);
+        if (!rsUser.next()) {
+            throw new UserNotFoundException("Не найден пользователь с ID = " + userId);
+        }
+    }
+
+    private void verifyFilm(long filmId) {
+        String findFilm = "SELECT ID FROM FILMS WHERE ID = ?";
+        SqlRowSet rsFilm = jdbcTemplate.queryForRowSet(findFilm, filmId);
+        if (!rsFilm.next()) {
+            throw new FilmNotFoundException("Не найден фильм с ID = " + filmId);
+        }
+    }
+
     public void verifyReview(long reviewId) {
-        Optional<Review> reviewOptional = findReviewById(reviewId);
+        Optional<Review> reviewOptional = Optional.ofNullable(getById(reviewId));
         if (reviewOptional.isEmpty()) {
             throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
         }

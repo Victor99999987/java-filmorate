@@ -5,18 +5,11 @@ import ru.yandex.practicum.filmorate.model.Review;
 import java.util.Collection;
 import java.util.Optional;
 
-public interface ReviewStorage {
-    Review createReview(Review review);
+public interface ReviewStorage extends Storage<Review> {
 
-    Review updateReview(Review review);
+    Collection<Review> getReviewByCount(int count);
 
-    void deleteReview(long id);
-
-    Optional<Review> findReviewById(long id);
-
-    Collection<Review> findReviewByCount(int count);
-
-    Collection<Review> findReviewByIdFilm(Long filmId, int count);
+    Collection<Review> getReviewByIdFilm(Long filmId, int count);
 
     Optional<Review> addLike(long reviewId, long userId);
 

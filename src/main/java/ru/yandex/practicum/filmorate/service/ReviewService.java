@@ -19,37 +19,33 @@ public class ReviewService {
     }
 
     public Review create(Review review) {
-        Review createdReview = reviewStorage.createReview(review);
+        Review createdReview = reviewStorage.add(review);
         log.info("Добавлен новый отзыв: {}.", createdReview);
         return createdReview;
     }
 
     public Review update(Review review) {
-        Review updatedReview = reviewStorage.updateReview(review);
+        Review updatedReview = reviewStorage.update(review);
         log.info("Обновлен отзыв: {}.", updatedReview);
         return updatedReview;
     }
 
     public void delete(long id) {
-        reviewStorage.deleteReview(id);
+        reviewStorage.remove(id);
     }
 
     public Review findById(long id) {
-        Optional<Review> reviewOptional = reviewStorage.findReviewById(id);
-        if (reviewOptional.isEmpty()) {
-            throw new ReviewNotFoundException("Отзыв с ID = " + id + " не найден.");
-        }
-        log.info("Запрошен отзыв с ID = {}.", reviewOptional.get().getReviewId());
-        return reviewOptional.get();
+        log.info("Запрошен отзыв с ID = {}.", id);
+        return reviewStorage.getById(id);
     }
 
     public Collection<Review> findReviewByIdFilm(Long filmId, int count) {
         Collection<Review> reviews;
         if (filmId == null) {
-            reviews = reviewStorage.findReviewByCount(count);
+            reviews = reviewStorage.getReviewByCount(count);
             log.info("Возвращено {} отзывов.", reviews.size());
         } else {
-            reviews = reviewStorage.findReviewByIdFilm(filmId, count);
+            reviews = reviewStorage.getReviewByIdFilm(filmId, count);
             log.info("Возвращено {} отзывов для фильма с ID = {}.", reviews.size(), filmId);
         }
         return reviews;
