@@ -27,10 +27,6 @@ public class DbDirectorStorage extends DbStorage implements Storage<Director> {
 
     @Override
     public Director add(Director director) {
-//        if (director.getId() != null) {
-//            log.info("DirectorAlreadyExistsException: При добавлении нового режиссёра id должен быть null");
-//            throw new DirectorAlreadyExistsException("При добавлении нового режиссёра id должен быть null");
-//        }
         String sqlQuery = "INSERT INTO directors (name) VALUES (?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {

@@ -3,12 +3,10 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.DirectorNotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.impl.db.DbDirectorStorage;
 
 import java.util.Collection;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -22,12 +20,7 @@ public class DirectorService {
     }
 
     public Director getById(Long id) {
-        Optional<Director> optionalDirector = Optional.ofNullable(directorStorage.getById(id));
-        if (optionalDirector.isPresent()) {
-            return optionalDirector.get();
-        } else {
-            throw new DirectorNotFoundException("Режиссер не найден!");
-        }
+        return directorStorage.getById(id);
     }
 
     public Director update(Director director) {
@@ -41,10 +34,6 @@ public class DirectorService {
 
     public void remove(Long id) {
         log.info(String.format("Удаляем режиссера с id: %s", id));
-        try {
-            directorStorage.remove(id);
-        } catch (DirectorNotFoundException e) {
-            throw new DirectorNotFoundException("Режиссер с таким id отсутствует в базе");
-        }
+        directorStorage.remove(id);
     }
 }
