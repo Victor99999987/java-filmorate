@@ -106,9 +106,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
                     ps.setLong(1, film.getId());
                     ps.setLong(2, genre.getId());
                 });
-
         batchUpd(film);
-
         return film;
     }
     
