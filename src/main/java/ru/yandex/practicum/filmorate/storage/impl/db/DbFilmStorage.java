@@ -209,34 +209,39 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
     @Override
     public List<Film> findFilmsSortByLikesAndYear(Long directorId, String param) {
         directorStorage.checkIfDirectorExists(directorStorage.getById(directorId));
+
+        String sqlQueryBaseNoParamYear = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
+                "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
+                "dr.director_id as director_id, dr.name as DIRECTOR_NAME \n" +
+                "from films as f \n" +
+                "left join mpa as m on f.mpa_id = m.id\n" +
+                "left join films_genres as fg on fg.films_id = f.id\n" +
+                "left join genres as g on fg.genres_id = g.id\n" +
+                "left join likes as l on l.films_id = f.id\n" +
+                "left join film_director fd on f.id=fd.film_id\n" +
+                "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n";
+
+        String sqlQueryBaseLikes = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
+                "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
+                "dr.director_id as director_id, dr.name as DIRECTOR_NAME, count(l.USERS_ID) as likes \n" +
+                "from films as f \n" +
+                "left join mpa as m on f.mpa_id = m.id\n" +
+                "left join films_genres as fg on fg.films_id = f.id\n" +
+                "left join genres as g on fg.genres_id = g.id\n" +
+                "left join likes as l on l.films_id = f.id\n" +
+                "left join film_director fd on f.id=fd.film_id\n" +
+                "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n";
+
         switch (param) {
             case "noParam":
-                String sqlNoParam = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
-                        "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
-                        "dr.director_id as director_id, dr.name as DIRECTOR_NAME \n" +
-                        "from films as f \n" +
-                        "left join mpa as m on f.mpa_id = m.id\n" +
-                        "left join films_genres as fg on fg.films_id = f.id\n" +
-                        "left join genres as g on fg.genres_id = g.id\n" +
-                        "left join likes as l on l.films_id = f.id\n" +
-                        "left join film_director fd on f.id=fd.film_id\n" +
-                        "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n" +
+                String sqlNoParam = sqlQueryBaseNoParamYear +
                         "WHERE dr.DIRECTOR_ID = ?";
                 SqlRowSet sqlRowSetNoParam = jdbcTemplate.queryForRowSet(sqlNoParam, directorId);
 
                 return makeFilms(sqlRowSetNoParam);
 
             case "year":
-                String sqlYear = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
-                        "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
-                        "dr.director_id as director_id, dr.name as DIRECTOR_NAME \n" +
-                        "from films as f \n" +
-                        "left join mpa as m on f.mpa_id = m.id\n" +
-                        "left join films_genres as fg on fg.films_id = f.id\n" +
-                        "left join genres as g on fg.genres_id = g.id\n" +
-                        "left join likes as l on l.films_id = f.id\n" +
-                        "left join film_director fd on f.id=fd.film_id\n" +
-                        "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n" +
+                String sqlYear = sqlQueryBaseNoParamYear +
                         "WHERE dr.DIRECTOR_ID = ?\n" +
                         "ORDER BY (f.RELEASEDATE)";
 
@@ -246,16 +251,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
                 return films;
 
             case "likes":
-                String sqlLikes = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
-                        "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
-                        "dr.director_id as director_id, dr.name as DIRECTOR_NAME, count(l.USERS_ID) as likes \n" +
-                        "from films as f \n" +
-                        "left join mpa as m on f.mpa_id = m.id\n" +
-                        "left join films_genres as fg on fg.films_id = f.id\n" +
-                        "left join genres as g on fg.genres_id = g.id\n" +
-                        "left join likes as l on l.films_id = f.id\n" +
-                        "left join film_director fd on f.id=fd.film_id\n" +
-                        "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n" +
+                String sqlLikes = sqlQueryBaseLikes +
                         "WHERE dr.DIRECTOR_ID = ?\n" +
                         "GROUP BY f.ID " +
                         "ORDER BY likes";
