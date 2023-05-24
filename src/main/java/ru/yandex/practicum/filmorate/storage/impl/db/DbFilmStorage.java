@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.DirectorNotFoundException;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationFilmException;
+import ru.yandex.practicum.filmorate.exception.ValidationSortException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -212,6 +213,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
                 directorId);
 
         if (count == null || count == 0) {
+            log.info("Режиссер с не найден");
             throw new DirectorNotFoundException("Director with id='" + directorId + "' not found");
         }
 
@@ -269,8 +271,9 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
                 SqlRowSet sqlRowSetLikes = jdbcTemplate.queryForRowSet(sqlLikes, directorId);
                 return makeFilms(sqlRowSetLikes);
 
-        }
+            default:
+                throw new ValidationSortException("Неверный параметр сортировки");
 
-        return List.of();
+        }
     }
 }
