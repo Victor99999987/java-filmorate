@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.type.EventType;
 import ru.yandex.practicum.filmorate.model.type.OperationType;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.Storage;
 
 import java.sql.Timestamp;
@@ -25,12 +26,12 @@ import java.util.stream.Stream;
 @Slf4j
 @Service
 public class FilmService {
-    private final Storage<Film> filmStorage;
     private final Storage<User> userStorage;
     private final Storage<Genre> genreStorage;
     private final Storage<Event> eventStorage;
+    private final FilmStorage filmStorage;
 
-    public FilmService(@Qualifier("DbFilmStorage") Storage<Film> filmStorage,
+    public FilmService(@Qualifier("DbFilmStorage") FilmStorage filmStorage,
                        @Qualifier("DbUserStorage") Storage<User> userStorage,
                        @Qualifier("DbGenreStorage") Storage<Genre> genreStorage,
                        @Qualifier("DbEventStorage") Storage<Event> eventStorage) {
@@ -125,5 +126,9 @@ public class FilmService {
                 .filter(film -> film.getLikes().contains(userId) && film.getLikes().contains(friendId))
                 .sorted(Comparator.comparingLong(film -> -1 * film.getLikes().size()))
                 .collect(Collectors.toList());
+    }
+
+    public List<Film> getFilmsSortByLikesAndYear(Long directorId, String param) {
+        return filmStorage.findFilmsSortByLikesAndYear(directorId, param);
     }
 }
