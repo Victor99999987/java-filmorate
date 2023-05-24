@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.storage.ReviewStorage;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 @Service
 @Slf4j
@@ -49,37 +50,32 @@ public class ReviewService {
             log.info("Возвращено {} отзывов для фильма с ID = {}.", reviews.size(), filmId);
         }
         return reviews;
-
     }
 
     public Review addLike(long reviewId, long userId) {
-        Optional<Review> reviewOptional = reviewStorage.addLike(reviewId, userId);
-        if (reviewOptional.isEmpty()) {
-            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
-        }
-        return reviewOptional.get();
+        return updateReview(reviewId, userId,
+                reviewStorage::addLike, "Отзыв с ID = " + reviewId + " не найден.");
     }
 
     public Review addDislike(long reviewId, long userId) {
-        Optional<Review> reviewOptional = reviewStorage.addDislike(reviewId, userId);
-        if (reviewOptional.isEmpty()) {
-            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
-        }
-        return reviewOptional.get();
+        return updateReview(reviewId, userId,
+                reviewStorage::addDislike, "Отзыв с ID = " + reviewId + " не найден.");
     }
 
     public Review removeLike(long reviewId, long userId) {
-        Optional<Review> reviewOptional = reviewStorage.removeLike(reviewId, userId);
-        if (reviewOptional.isEmpty()) {
-            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
-        }
-        return reviewOptional.get();
+        return updateReview(reviewId, userId,
+                reviewStorage::removeLike, "Отзыв с ID = " + reviewId + " не найден.");
     }
 
     public Review removeDislike(long reviewId, long userId) {
-        Optional<Review> reviewOptional = reviewStorage.removeDislike(reviewId, userId);
+        return updateReview(reviewId, userId,
+                reviewStorage::removeDislike, "Отзыв с ID = " + reviewId + " не найден.");
+    }
+
+    private Review updateReview(long reviewId, long userId, BiFunction<Long, Long, Optional<Review>> function, String errorMessage) {
+        Optional<Review> reviewOptional = function.apply(reviewId, userId);
         if (reviewOptional.isEmpty()) {
-            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
+            throw new ReviewNotFoundException(errorMessage + reviewId + " не найден.");
         }
         return reviewOptional.get();
     }
