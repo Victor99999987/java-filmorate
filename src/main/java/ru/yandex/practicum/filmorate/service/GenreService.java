@@ -36,5 +36,4 @@ public class GenreService {
     public Genre update(Genre genre) {
         return genreStorage.update(genre);
     }
-
 }
