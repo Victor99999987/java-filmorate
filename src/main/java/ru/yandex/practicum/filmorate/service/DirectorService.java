@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,7 @@ import java.util.Collection;
 public class DirectorService {
     private final DbDirectorStorage directorStorage;
 
-    public DirectorService(@Qualifier("DbDirectorStorage")DbDirectorStorage directorStorage) {
+    public DirectorService(@Qualifier("DbDirectorStorage") DbDirectorStorage directorStorage) {
         this.directorStorage = directorStorage;
     }
 
