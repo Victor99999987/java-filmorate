@@ -60,13 +60,6 @@ public class DbDirectorStorage extends DbStorage implements Storage<Director> {
         return jdbcTemplate.query(sqlQuery, this::mapRowToDirector);
     }
 
-    private Director mapRowToDirector(ResultSet resultSet, long i) throws SQLException {
-        return Director.builder()
-                .id(resultSet.getLong("director_id"))
-                .name(resultSet.getString("name"))
-                .build();
-    }
-
     @Override
     public Director getById(Long id) {
         String sql = "select director_id, name from directors where director_id = ?";
@@ -94,7 +87,7 @@ public class DbDirectorStorage extends DbStorage implements Storage<Director> {
         return director;
     }
 
-    void checkIfDirectorExists(Director director) {
+    protected void checkIfDirectorExists(Director director) {
         Integer count = jdbcTemplate.queryForObject("SELECT count(DIRECTOR_ID) FROM DIRECTORS WHERE DIRECTOR_ID = ?",
                 Integer.class,
                 director.getId());
@@ -103,5 +96,12 @@ public class DbDirectorStorage extends DbStorage implements Storage<Director> {
             log.info("Режиссер с id {} не найден", director.getId());
             throw new DirectorNotFoundException("Director with id='" + director.getId() + "' not found");
         }
+    }
+
+    private Director mapRowToDirector(ResultSet resultSet, long i) throws SQLException {
+        return Director.builder()
+                .id(resultSet.getLong("director_id"))
+                .name(resultSet.getString("name"))
+                .build();
     }
 }

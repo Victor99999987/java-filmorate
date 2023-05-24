@@ -33,37 +33,37 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         this.directorStorage = directorStorage;
     }
 
+    private final String sqlQueryBaseNoParamYear = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
+            "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
+            "dr.director_id as director_id, dr.name as DIRECTOR_NAME \n" +
+            "from films as f \n" +
+            "left join mpa as m on f.mpa_id = m.id\n" +
+            "left join films_genres as fg on fg.films_id = f.id\n" +
+            "left join genres as g on fg.genres_id = g.id\n" +
+            "left join likes as l on l.films_id = f.id\n" +
+            "left join film_director fd on f.id=fd.film_id\n" +
+            "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n";
+
+    private final String sqlQueryBaseLikes = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
+            "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
+            "dr.director_id as director_id, dr.name as DIRECTOR_NAME, count(l.USERS_ID) as likes \n" +
+            "from films as f \n" +
+            "left join mpa as m on f.mpa_id = m.id\n" +
+            "left join films_genres as fg on fg.films_id = f.id\n" +
+            "left join genres as g on fg.genres_id = g.id\n" +
+            "left join likes as l on l.films_id = f.id\n" +
+            "left join film_director fd on f.id=fd.film_id\n" +
+            "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n";
+
     @Override
     public List<Film> getAll() {
-        String sql = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
-                "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
-                "dr.director_id as director_id, dr.name as DIRECTOR_NAME \n" +
-                "from films as f \n" +
-                "left join mpa as m on f.mpa_id = m.id\n" +
-                "left join films_genres as fg on fg.films_id = f.id\n" +
-                "left join genres as g on fg.genres_id = g.id\n" +
-                "left join likes as l on l.films_id = f.id\n" +
-                "left join film_director fd on f.id=fd.film_id\n" +
-                "left join directors dr on fd.director_id=dr.DIRECTOR_ID";
-        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
-
-        return makeFilms(sqlRowSet);
+        return makeFilms(jdbcTemplate.queryForRowSet(sqlQueryBaseNoParamYear));
     }
 
 
     @Override
     public Film getById(Long id) {
-        String sql = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
-                "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
-                "d.director_id as sirector_id, d.name as director_name\n" +
-                "from films as f \n" +
-                "left join mpa as m on f.mpa_id = m.id\n" +
-                "left join films_genres as fg on fg.films_id = f.id\n" +
-                "left join genres as g on fg.genres_id = g.id\n" +
-                "left join likes as l on l.films_id = f.id\n" +
-                "left join film_director fd on f.id=fd.film_id\n" +
-                "left join directors d on fd.director_id=d.DIRECTOR_ID\n" +
-                "where f.id = ?";
+        String sql = sqlQueryBaseNoParamYear + "where f.id = ?";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (!sqlRowSet.first()) {
             log.info(String.format("FilmNotFoundException: Не найден фильм с id=%d", id));
@@ -82,7 +82,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         }
         for (Director director : film.getDirectors()) {
             if (directorStorage.getById(director.getId()) == null) {
-                log.info("Режиссер с не найден");
+                log.info("Режиссер с id {} не найден", director.getId());
                 throw new DirectorNotFoundException("Режиссёр не найден.");
             }
         }
@@ -107,19 +107,11 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
                     ps.setLong(2, genre.getId());
                 });
 
-        sql = "delete from film_director where film_id = ?";
-        jdbcTemplate.update(sql, film.getId());
+        batchUpd(film);
 
-        sql = "insert into film_director (film_id, director_id) values(?, ?)";
-        jdbcTemplate.batchUpdate(sql, film.getDirectors(), film.getDirectors().size(),
-                (ps, director) -> {
-                    ps.setLong(1, film.getId());
-                    ps.setLong(2, director.getId());
-                });
         return film;
     }
-
-
+    
     @Override
     public Film remove(Long id) {
         Film film = getById(id);
@@ -154,7 +146,50 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
                     ps.setLong(2, usersId);
                 });
 
-        sql = "delete from film_director where film_id = ?";
+        batchUpd(film);
+
+        return film;
+    }
+
+    @Override
+    public List<Film> findFilmsSortByLikesAndYear(Long directorId, String param) {
+        directorStorage.checkIfDirectorExists(directorStorage.getById(directorId));
+
+        switch (param) {
+            case "noParam":
+                String sqlNoParam = sqlQueryBaseNoParamYear +
+                        "WHERE dr.DIRECTOR_ID = ?";
+                SqlRowSet sqlRowSetNoParam = jdbcTemplate.queryForRowSet(sqlNoParam, directorId);
+
+                return makeFilms(sqlRowSetNoParam);
+
+            case "year":
+                String sqlYear = sqlQueryBaseNoParamYear +
+                        "WHERE dr.DIRECTOR_ID = ?\n" +
+                        "ORDER BY (f.RELEASEDATE)";
+
+                SqlRowSet sqlRowSetYear = jdbcTemplate.queryForRowSet(sqlYear, directorId);
+                List<Film> films = makeFilms(sqlRowSetYear);
+                Collections.reverse(films);
+                return films;
+
+            case "likes":
+                String sqlLikes = sqlQueryBaseLikes +
+                        "WHERE dr.DIRECTOR_ID = ?\n" +
+                        "GROUP BY f.ID " +
+                        "ORDER BY likes";
+
+                SqlRowSet sqlRowSetLikes = jdbcTemplate.queryForRowSet(sqlLikes, directorId);
+                return makeFilms(sqlRowSetLikes);
+
+            default:
+                throw new ValidationSortException("Неверный параметр сортировки");
+
+        }
+    }
+
+    private void batchUpd(Film film) {
+        String sql = "delete from film_director where film_id = ?";
         jdbcTemplate.update(sql, film.getId());
 
         sql = "insert into film_director (film_id, director_id) values(?, ?)";
@@ -163,8 +198,6 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
                     ps.setLong(1, film.getId());
                     ps.setLong(2, director.getId());
                 });
-
-        return film;
     }
 
     private List<Film> makeFilms(SqlRowSet rs) {
@@ -206,62 +239,12 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         return new ArrayList<>(films.values());
     }
 
-    @Override
-    public List<Film> findFilmsSortByLikesAndYear(Long directorId, String param) {
-        directorStorage.checkIfDirectorExists(directorStorage.getById(directorId));
-
-        String sqlQueryBaseNoParamYear = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
-                "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
-                "dr.director_id as director_id, dr.name as DIRECTOR_NAME \n" +
-                "from films as f \n" +
-                "left join mpa as m on f.mpa_id = m.id\n" +
-                "left join films_genres as fg on fg.films_id = f.id\n" +
-                "left join genres as g on fg.genres_id = g.id\n" +
-                "left join likes as l on l.films_id = f.id\n" +
-                "left join film_director fd on f.id=fd.film_id\n" +
-                "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n";
-
-        String sqlQueryBaseLikes = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
-                "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
-                "dr.director_id as director_id, dr.name as DIRECTOR_NAME, count(l.USERS_ID) as likes \n" +
-                "from films as f \n" +
-                "left join mpa as m on f.mpa_id = m.id\n" +
-                "left join films_genres as fg on fg.films_id = f.id\n" +
-                "left join genres as g on fg.genres_id = g.id\n" +
-                "left join likes as l on l.films_id = f.id\n" +
-                "left join film_director fd on f.id=fd.film_id\n" +
-                "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n";
-
-        switch (param) {
-            case "noParam":
-                String sqlNoParam = sqlQueryBaseNoParamYear +
-                        "WHERE dr.DIRECTOR_ID = ?";
-                SqlRowSet sqlRowSetNoParam = jdbcTemplate.queryForRowSet(sqlNoParam, directorId);
-
-                return makeFilms(sqlRowSetNoParam);
-
-            case "year":
-                String sqlYear = sqlQueryBaseNoParamYear +
-                        "WHERE dr.DIRECTOR_ID = ?\n" +
-                        "ORDER BY (f.RELEASEDATE)";
-
-                SqlRowSet sqlRowSetYear = jdbcTemplate.queryForRowSet(sqlYear, directorId);
-                List<Film> films = makeFilms(sqlRowSetYear);
-                Collections.reverse(films);
-                return films;
-
-            case "likes":
-                String sqlLikes = sqlQueryBaseLikes +
-                        "WHERE dr.DIRECTOR_ID = ?\n" +
-                        "GROUP BY f.ID " +
-                        "ORDER BY likes";
-
-                SqlRowSet sqlRowSetLikes = jdbcTemplate.queryForRowSet(sqlLikes, directorId);
-                return makeFilms(sqlRowSetLikes);
-
-            default:
-                throw new ValidationSortException("Неверный параметр сортировки");
-
+    private void checkDirector(Film film) {
+        for (Director director : film.getDirectors()) {
+            if (directorStorage.getById(director.getId()) == null) {
+                log.info("Режиссер с id {} не найден", director.getId());
+                throw new DirectorNotFoundException("Режиссёр не найден.");
+            }
         }
     }
 }
