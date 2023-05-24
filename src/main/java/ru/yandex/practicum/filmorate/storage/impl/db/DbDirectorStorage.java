@@ -60,7 +60,7 @@ public class DbDirectorStorage extends DbStorage implements Storage<Director> {
         return jdbcTemplate.query(sqlQuery, this::mapRowToDirector);
     }
 
-    public Director mapRowToDirector(ResultSet resultSet, long i) throws SQLException {
+    private Director mapRowToDirector(ResultSet resultSet, long i) throws SQLException {
         return Director.builder()
                 .id(resultSet.getLong("director_id"))
                 .name(resultSet.getString("name"))
@@ -100,7 +100,7 @@ public class DbDirectorStorage extends DbStorage implements Storage<Director> {
                 director.getId());
 
         if (count == null || count == 0) {
-            log.info("Режиссер с не найден");
+            log.info("Режиссер с id {} не найден", director.getId());
             throw new DirectorNotFoundException("Director with id='" + director.getId() + "' not found");
         }
     }

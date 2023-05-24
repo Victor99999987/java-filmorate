@@ -24,6 +24,7 @@ public class DirectorService {
     }
 
     public Director update(Director director) {
+        log.info("Обновляем информацию о режиссёре");
         return directorStorage.update(director);
     }
 
