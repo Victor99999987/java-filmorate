@@ -2,17 +2,21 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.impl.db.DbDirectorStorage;
 
 import java.util.Collection;
 
-@RequiredArgsConstructor
 @Service
 @Slf4j
 public class DirectorService {
     private final DbDirectorStorage directorStorage;
+
+    public DirectorService(@Qualifier("DbDirectorStorage")DbDirectorStorage directorStorage) {
+        this.directorStorage = directorStorage;
+    }
 
     public Director add(Director director) {
         log.info("Добавляем режиссера в коллекцию");

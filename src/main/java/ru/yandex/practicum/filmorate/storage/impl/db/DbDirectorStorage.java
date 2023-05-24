@@ -7,6 +7,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exception.DirectorAlreadyExistsException;
 import ru.yandex.practicum.filmorate.exception.DirectorNotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.Storage;
@@ -39,9 +40,8 @@ public class DbDirectorStorage extends DbStorage implements Storage<Director> {
             }, keyHolder);
             director.setId(keyHolder.getKey().longValue());
         } else {
-            String sqlSelectIdQuery = "SELECT director_id FROM directors WHERE name = ?";
-            long id = jdbcTemplate.queryForObject(sqlSelectIdQuery, Long.class, director.getName());
-            director.setId(id);
+            log.info("Режиссер с id {} уже есть в базе", director.getId());
+            throw new DirectorAlreadyExistsException("Режиссер с id='" + director.getId() + " уже есть в базе");
         }
         return director;
     }
