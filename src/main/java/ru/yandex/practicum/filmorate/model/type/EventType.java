@@ -1,2 +1,7 @@
-package ru.yandex.practicum.filmorate.model;public class EventType {
+package ru.yandex.practicum.filmorate.model.type;
+
+public enum EventType {
+    LIKE,
+    REVIEW,
+    FRIEND
 }

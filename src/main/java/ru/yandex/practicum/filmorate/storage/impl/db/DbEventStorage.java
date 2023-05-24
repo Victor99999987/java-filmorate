@@ -6,83 +6,98 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exception.GenreNotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationGenreException;
-import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.exception.EventNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationEventException;
+import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.type.EventType;
+import ru.yandex.practicum.filmorate.model.type.OperationType;
 import ru.yandex.practicum.filmorate.storage.Storage;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 @Component
-@Qualifier("DbGenreStorage")
-public class DbGenreStorage extends DbStorage implements Storage<Genre> {
-    public DbGenreStorage(JdbcTemplate jdbcTemplate) {
+@Qualifier("DbEventStorage")
+public class DbEventStorage extends DbStorage implements Storage<Event> {
+
+    public DbEventStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
     @Override
-    public List<Genre> getAll() {
-        List<Genre> result = new ArrayList<>();
-        String sql = "select id, name from genres";
+    public List<Event> getAll() {
+        List<Event> result = new ArrayList<>();
+        String sql = "select id, timestmp, users_id, eventtype, operation, entitys_id from events order by timestmp desc";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
         while (sqlRowSet.next()) {
-            result.add(makeGenre(sqlRowSet));
+            result.add(makeEvent(sqlRowSet));
         }
         return result;
     }
 
     @Override
-    public Genre getById(Long id) {
-        String sql = "select id, name from genres where id = ?";
+    public Event getById(Long id) {
+        String sql = "select id, timestmp, users_id, eventtype, operation, entitys_id from events where id = ?";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (!sqlRowSet.first()) {
-            log.info(String.format("GenreNotFoundException: Не найден жанр с id=%d", id));
-            throw new GenreNotFoundException(String.format("Не найден жанр с id=%d", id));
+            log.info(String.format("EventNotFoundException: Не найдено событие с id=%d", id));
+            throw new EventNotFoundException(String.format("Не найдено событие с id=%d", id));
         }
-        return makeGenre(sqlRowSet);
+        return makeEvent(sqlRowSet);
     }
 
     @Override
-    public Genre add(Genre genre) {
-        if (genre.getId() != null) {
-            log.info("ValidationGenreException: При добавлении жанра id должен быть null");
-            throw new ValidationGenreException("При добавлении жанра id должен быть null");
+    public Event add(Event event) {
+        if (event.getEventId() != null) {
+            log.info("ValidationEventException: При добавлении события id должен быть null");
+            throw new ValidationEventException("При добавлении события id должен быть null");
         }
         GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
-        String sql = "insert into genres (name) values(?)";
+        String sql = "insert into events (timestmp, users_id, eventtype, operation, entitys_id) values(?, ?, ?, ?, ?)";
         jdbcTemplate.update(conn -> {
             PreparedStatement preparedStatement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            preparedStatement.setString(1, genre.getName());
+            //preparedStatement.setTimestamp(1, Timestamp.from(Instant.ofEpochMilli(event.getTimestamp())));
+            preparedStatement.setLong(1, event.getTimestamp());
+            preparedStatement.setLong(2, event.getUserId());
+            preparedStatement.setString(3, event.getEventType().toString());
+            preparedStatement.setString(4, event.getOperation().toString());
+            preparedStatement.setLong(5, event.getEntityId());
             return preparedStatement;
         }, generatedKeyHolder);
-        genre.setId(generatedKeyHolder.getKey().longValue());
-        return genre;
+        event.setEventId(generatedKeyHolder.getKey().longValue());
+        return event;
     }
 
     @Override
-    public Genre remove(Long id) {
-        Genre genre = getById(id);
-        String sql = "delete from genres where id = ?";
+    public Event remove(Long id) {
+        Event event = getById(id);
+        String sql = "delete from events where id = ?";
         jdbcTemplate.update(sql, id);
-        return genre;
+        return event;
     }
 
     @Override
-    public Genre update(Genre genre) {
-        getById(genre.getId());
-        String sql = "update genres set name = ? where id = ?";
-        jdbcTemplate.update(sql, genre.getName(), genre.getId());
-        return genre;
+    public Event update(Event event) {
+        getById(event.getEventId());
+        String sql = "update events set timestmp = ?, users_id = ?, eventtype = ?, operation = ?, entitys_id = ? where id = ?";
+        jdbcTemplate.update(sql, event.getTimestamp(), event.getUserId(), event.getEventType(), event.getEntityId(),
+                event.getOperation(), event.getEventId());
+        return event;
     }
 
-    private Genre makeGenre(SqlRowSet rs) {
-        return Genre.builder()
-                .id(rs.getLong("id"))
-                .name(rs.getString("name"))
+    private Event makeEvent(SqlRowSet rs) {
+        return Event.builder()
+                .eventId(rs.getLong("id"))
+                .timestamp(rs.getLong("timestmp")) //.timestamp(Timestamp.valueOf(rs.getString("timestmp")))
+                .userId(rs.getLong("users_id"))
+                .eventType(EventType.valueOf(rs.getString("eventtype")))
+                .operation(OperationType.valueOf(rs.getString("operation")))
+                .entityId(rs.getLong("entitys_id"))
                 .build();
     }
 }

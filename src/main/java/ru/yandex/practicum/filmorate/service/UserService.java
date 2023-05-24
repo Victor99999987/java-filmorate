@@ -5,9 +5,15 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UserAlreadyExistException;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.type.EventType;
+import ru.yandex.practicum.filmorate.model.type.OperationType;
 import ru.yandex.practicum.filmorate.storage.Storage;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -17,9 +23,12 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final Storage<User> userStorage;
+    private final Storage<Event> eventStorage;
 
-    public UserService(@Qualifier("DbUserStorage") Storage<User> userStorage) {
+    public UserService(@Qualifier("DbUserStorage") Storage<User> userStorage,
+                       @Qualifier("DbEventStorage") Storage<Event> eventStorage) {
         this.userStorage = userStorage;
+        this.eventStorage = eventStorage;
     }
 
     public List<User> getAll() {
@@ -66,6 +75,14 @@ public class UserService {
         }
         user.getFriends().add(friendId);
         userStorage.update(user);
+        Event event = Event.builder()
+                .timestamp(Instant.now().toEpochMilli())
+                .userId(id)
+                .operation(OperationType.ADD)
+                .eventType(EventType.FRIEND)
+                .entityId(friendId)
+                .build();
+        eventStorage.add(event);
         return user;
     }
 
@@ -78,6 +95,14 @@ public class UserService {
         }
         user.getFriends().remove(friendId);
         userStorage.update(user);
+        Event event = Event.builder()
+                .timestamp(Instant.now().toEpochMilli())
+                .userId(id)
+                .operation(OperationType.REMOVE)
+                .eventType(EventType.FRIEND)
+                .entityId(friendId)
+                .build();
+        eventStorage.add(event);
         return user;
     }
 
