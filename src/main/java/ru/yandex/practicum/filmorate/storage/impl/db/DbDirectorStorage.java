@@ -40,13 +40,7 @@ public class DbDirectorStorage extends DbStorage implements Storage<Director> {
 
     @Override
     public Director update(Director director) {
-        Integer count = jdbcTemplate.queryForObject("SELECT count(DIRECTOR_ID) FROM DIRECTORS WHERE DIRECTOR_ID = ?",
-                Integer.class,
-                director.getId());
-
-        if (count == null || count == 0) {
-            throw new DirectorNotFoundException("Director with id='" + director.getId() + "' not found");
-        }
+        checkIfDirectorExists(director);
         String sqlQuery = "UPDATE directors SET name = ? WHERE director_id = ?";
         jdbcTemplate.update(sqlQuery, director.getName(), director.getId());
         return director;
@@ -90,5 +84,16 @@ public class DbDirectorStorage extends DbStorage implements Storage<Director> {
         jdbcTemplate.update("DELETE FROM film_director WHERE director_id = ?", id);
         log.info(String.format("%s %d %s", "Режиссер с id ", id, " успешно удален"));
         return director;
+    }
+
+    void checkIfDirectorExists(Director director) {
+        Integer count = jdbcTemplate.queryForObject("SELECT count(DIRECTOR_ID) FROM DIRECTORS WHERE DIRECTOR_ID = ?",
+                Integer.class,
+                director.getId());
+
+        if (count == null || count == 0) {
+            log.info("Режиссер с не найден");
+            throw new DirectorNotFoundException("Director with id='" + director.getId() + "' not found");
+        }
     }
 }

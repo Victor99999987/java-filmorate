@@ -208,15 +208,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
 
     @Override
     public List<Film> findFilmsSortByLikesAndYear(Long directorId, String param) {
-        Integer count = jdbcTemplate.queryForObject("SELECT count(DIRECTOR_ID) FROM DIRECTORS WHERE DIRECTOR_ID = ?",
-                Integer.class,
-                directorId);
-
-        if (count == null || count == 0) {
-            log.info("Режиссер с не найден");
-            throw new DirectorNotFoundException("Director with id='" + directorId + "' not found");
-        }
-
+        directorStorage.checkIfDirectorExists(directorStorage.getById(directorId));
         switch (param) {
             case "noParam":
                 String sqlNoParam = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
