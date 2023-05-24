@@ -25,8 +25,11 @@ import java.util.*;
 @Qualifier("DbFilmStorage")
 public class DbFilmStorage extends DbStorage implements FilmStorage {
 
-    public DbFilmStorage(JdbcTemplate jdbcTemplate) {
+    private final DbDirectorStorage directorStorage;
+
+    public DbFilmStorage(JdbcTemplate jdbcTemplate, DbDirectorStorage directorStorage) {
         super(jdbcTemplate);
+        this.directorStorage = directorStorage;
     }
 
     @Override
@@ -75,6 +78,12 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         if (film.getId() != null) {
             log.info("ValidationFilmException: При добавлении фильма id должен быть null");
             throw new ValidationFilmException("При добавлении фильма id должен быть null");
+        }
+        for (Director director : film.getDirectors()) {
+            if (directorStorage.getById(director.getId()) == null) {
+                log.info("Режиссер с не найден");
+                throw new DirectorNotFoundException("Режиссёр не найден.");
+            }
         }
         GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
         String sql = "insert into films (name, description, releaseDate, duration, mpa_id) values(?, ?, ?, ?, ?)";
