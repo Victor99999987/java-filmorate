@@ -236,13 +236,4 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         }
         return new ArrayList<>(films.values());
     }
-
-    private void checkDirector(Film film) {
-        for (Director director : film.getDirectors()) {
-            if (directorStorage.getById(director.getId()) == null) {
-                log.info("Режиссер с id {} не найден", director.getId());
-                throw new DirectorNotFoundException("Режиссёр не найден.");
-            }
-        }
-    }
 }
