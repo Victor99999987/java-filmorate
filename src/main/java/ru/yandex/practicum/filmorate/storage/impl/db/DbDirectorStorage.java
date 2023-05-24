@@ -27,14 +27,22 @@ public class DbDirectorStorage extends DbStorage implements Storage<Director> {
 
     @Override
     public Director add(Director director) {
-        String sqlQuery = "INSERT INTO directors (name) VALUES (?)";
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbcTemplate.update(connection -> {
-            PreparedStatement statement = connection.prepareStatement(sqlQuery, new String[]{"director_id"});
-            statement.setString(1, director.getName());
-            return statement;
-        }, keyHolder);
-        director.setId(keyHolder.getKey().longValue());
+        String sqlSelectQuery = "SELECT COUNT(*) FROM directors WHERE name = ?";
+        int count = jdbcTemplate.queryForObject(sqlSelectQuery, Integer.class, director.getName());
+        if (count == 0) {
+            String sqlInsertQuery = "INSERT INTO directors (name) VALUES (?)";
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+            jdbcTemplate.update(connection -> {
+                PreparedStatement statement = connection.prepareStatement(sqlInsertQuery, new String[]{"director_id"});
+                statement.setString(1, director.getName());
+                return statement;
+            }, keyHolder);
+            director.setId(keyHolder.getKey().longValue());
+        } else {
+            String sqlSelectIdQuery = "SELECT director_id FROM directors WHERE name = ?";
+            long id = jdbcTemplate.queryForObject(sqlSelectIdQuery, Long.class, director.getName());
+            director.setId(id);
+        }
         return director;
     }
 
