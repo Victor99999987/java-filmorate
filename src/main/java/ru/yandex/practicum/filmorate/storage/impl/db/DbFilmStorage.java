@@ -109,7 +109,6 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         batchUpd(film);
         return film;
     }
-    
     @Override
     public Film remove(Long id) {
         Film film = getById(id);
