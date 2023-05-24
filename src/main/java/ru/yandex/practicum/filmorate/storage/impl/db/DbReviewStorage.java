@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.storage.impl.db;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -115,15 +116,19 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     public Optional<Review> addLike(long reviewId, long userId) {
         verifyUser(userId);
         verifyReview(reviewId);
-        if (jdbcTemplate.update(insertLikeReview, reviewId, userId, true) < 1) {
+        try {
+            if (jdbcTemplate.update(insertLikeReview, reviewId, userId, true) > 0) {
+                jdbcTemplate.update(updateUsefulPlus, reviewId);
+                log.info("Пользователь с ID = {} добавил лайк для отзыва ID = {}.", userId, reviewId);
+                return Optional.ofNullable(getById(reviewId));
+            } else {
+                return Optional.empty();
+            }
+        } catch (DuplicateKeyException e) {
             log.info("Ошибка при добавлении лайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
             throw new ReviewIncorrectLikeException(String
                     .format("Ошибка при добавлении лайка для отзыва ID = %d от пользователя с ID = %d.",
                             reviewId, userId));
-        } else {
-            jdbcTemplate.update(updateUsefulPlus, reviewId);
-            log.info("Пользователь с ID = {} добавил лайк для отзыва ID = {}.", userId, reviewId);
-            return Optional.ofNullable(getById(reviewId));
         }
     }
 
@@ -131,15 +136,19 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     public Optional<Review> addDislike(long reviewId, long userId) {
         verifyUser(userId);
         verifyReview(reviewId);
-        if (jdbcTemplate.update(insertLikeReview, reviewId, userId, false) < 1) {
+        try {
+            if (jdbcTemplate.update(insertLikeReview, reviewId, userId, false) > 0) {
+                jdbcTemplate.update(updateUsefulMinus, reviewId);
+                log.info("Пользователь с ID = {} добавил дизлайк для отзыва ID = {}.", userId, reviewId);
+                return Optional.ofNullable(getById(reviewId));
+            } else {
+                return Optional.empty();
+            }
+        } catch (DuplicateKeyException e) {
             log.info("Ошибка при добавлении дизлайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
             throw new ReviewIncorrectLikeException(String
                     .format("Ошибка при добавлении дизлайка для отзыва ID = %d от пользователя с ID = %d.",
                             reviewId, userId));
-        } else {
-            jdbcTemplate.update(updateUsefulMinus, reviewId);
-            log.info("Пользователь с ID = {} добавил дизлайк для отзыва ID = {}.", userId, reviewId);
-            return Optional.ofNullable(getById(reviewId));
         }
     }
 
