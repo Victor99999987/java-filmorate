@@ -186,6 +186,40 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         }
     }
 
+    @Override
+    public List<Film> searchFilms(String query, String by) {
+
+        if (by.equalsIgnoreCase("title")) {
+            String sql = sqlQueryBaseNoParamYear +
+                    "WHERE lower(f.NAME) LIKE lower('%" + query + "%')";
+
+            SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
+            List<Film> films = makeFilms(sqlRowSet);
+            Collections.reverse(films);
+            return films;
+        }
+
+        if (by.equalsIgnoreCase("director")) {
+            String sql = sqlQueryBaseNoParamYear +
+                    "WHERE lower(dr.name) LIKE lower('%" + query + "%')";
+
+            SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
+            List<Film> films = makeFilms(sqlRowSet);
+            Collections.reverse(films);
+            return films;
+        }
+
+        String sql = sqlQueryBaseNoParamYear +
+                "WHERE lower(f.NAME) LIKE lower('%" + query + "%') OR " +
+                "lower(dr.name) LIKE lower('%" + query + "%') " +
+                "ORDER BY f.ID DESC";
+
+        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
+        List<Film> films = makeFilms(sqlRowSet);
+        Collections.reverse(films);
+        return films;
+    }
+
     private void batchUpd(Film film) {
         String sql = "delete from film_director where film_id = ?";
         jdbcTemplate.update(sql, film.getId());

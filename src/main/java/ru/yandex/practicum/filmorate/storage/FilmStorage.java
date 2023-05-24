@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface FilmStorage extends Storage<Film> {
     List<Film> findFilmsSortByLikesAndYear(Long directorId, String param);
+
+    List<Film> searchFilms(String query, String by);
 }

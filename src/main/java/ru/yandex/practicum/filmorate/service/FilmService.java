@@ -106,4 +106,8 @@ public class FilmService {
     public List<Film> getFilmsSortByLikesAndYear(Long directorId, String param) {
         return filmStorage.findFilmsSortByLikesAndYear(directorId, param);
     }
+
+    public List<Film> searchFilms(String query, String by) {
+        return filmStorage.searchFilms(query, by);
+    }
 }

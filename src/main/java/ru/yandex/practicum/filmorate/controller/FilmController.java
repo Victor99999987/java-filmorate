@@ -74,4 +74,9 @@ public class FilmController {
                                                  @RequestParam(name = "sortBy") Optional<String> paramSort) {
         return filmService.getFilmsSortByLikesAndYear(directorId, paramSort.orElse("noParam"));
     }
+
+    @GetMapping("/search")
+    public List<Film> searchFilms(@RequestParam String query, @RequestParam String by) {
+        return filmService.searchFilms(query, by);
+    }
 }
