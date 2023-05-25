@@ -237,7 +237,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         return new ArrayList<>(films.values());
     }
 
-    public List<Film> getMovieRecommendations(Long userId) {
+    public List<Film> getMovieRecommendations(Integer userId) {
         String sql = "" +
                 "SELECT tb1.id, tb1.name, tb1.description, tb1.releasedate, tb1.duration, tb1.mpa_id, m.name as mpa_name" +
                 ", fg.genres_id, g.name as genres_name, tb1.users_id " +
@@ -278,7 +278,12 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
 
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, userId, userId, userId, userId, userId);
 
-        return makeFilms(sqlRowSet);
+        List<Film> films = makeFilms(sqlRowSet);
+        if (films.size() == 0) {
+            return Collections.emptyList();
+        } else {
+            return makeFilms(sqlRowSet);
+        }
     }
 
 }
