@@ -9,7 +9,6 @@ import ru.yandex.practicum.filmorate.model.type.OperationType;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
-import java.sql.Timestamp;
 
 @Data
 @AllArgsConstructor
