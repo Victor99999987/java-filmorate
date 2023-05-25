@@ -54,7 +54,6 @@ public class FilmService {
     }
 
     public Film remove(Long id) {
-        Film film = filmStorage.remove(id);
         return filmStorage.remove(id);
     }
 

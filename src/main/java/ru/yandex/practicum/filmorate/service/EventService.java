@@ -28,23 +28,7 @@ public class EventService {
     public List<Event> getFeedByUserId(Long id) {
         return getAll().stream()
                 .filter(event -> event.getUserId().equals(id))
-                //.sorted(Comparator.comparingLong(ev -> ev.getTimestamp().getTime()))
                 .collect(Collectors.toList());
     }
-//    public Event getById(Long id) {
-//        return eventStorage.getById(id);
-//    }
-//
-//    public Event add(Event event) {
-//        return eventStorage.add(event);
-//    }
-//
-//    public Event remove(Long id) {
-//        return eventStorage.remove(id);
-//    }
-//
-//    public Event update(Event event) {
-//        return eventStorage.update(event);
-//    }
 
 }

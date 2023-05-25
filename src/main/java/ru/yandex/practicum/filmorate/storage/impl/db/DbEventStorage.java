@@ -72,7 +72,7 @@ public class DbEventStorage extends DbStorage implements Storage<Event> {
             throw new ValidationEventException("При добавлении события id должен быть null");
         }
         String sql = "insert into events (timestmp, users_id, eventtype, operation, entitys_id) values(?, ?, ?, ?, ?)";
-        switch (event.getEventType()){
+        switch (event.getEventType()) {
             case LIKE:
                 sql = sql.replace("entitys_id", "entitys_films_id");
                 break;
@@ -110,7 +110,7 @@ public class DbEventStorage extends DbStorage implements Storage<Event> {
     public Event update(Event event) {
         getById(event.getEventId());
         String sql = "update events set timestmp = ?, users_id = ?, eventtype = ?, operation = ?, entitys_id = ? where id = ?";
-        switch (event.getEventType()){
+        switch (event.getEventType()) {
             case LIKE:
                 sql = sql.replace("entitys_id", "entitys_films_id");
                 break;
