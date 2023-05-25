@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.service.UserService;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -67,9 +66,8 @@ public class UserController {
     }
 
     @GetMapping("/{id}/recommendations")
-    public List<Film> getMovieRecommendations(@PathVariable("id") Integer userId) {
-        //return userService.getMovieRecommendations(userId);
-        return Collections.emptyList();
+    public List<Film> getMovieRecommendations(@PathVariable("id") Long userId) {
+        return userService.getMovieRecommendations(userId);
     }
 
 }

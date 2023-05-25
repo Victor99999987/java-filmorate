@@ -236,4 +236,49 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         }
         return new ArrayList<>(films.values());
     }
+
+    public List<Film> getMovieRecommendations(Long userId) {
+        String sql = "" +
+                "SELECT tb1.id, tb1.name, tb1.description, tb1.releasedate, tb1.duration, tb1.mpa_id, m.name as mpa_name" +
+                ", fg.genres_id, g.name as genres_name, tb1.users_id " +
+                "FROM (" +
+                "   SELECT f.*, users_id" + //получили информацию о рекомендуемых фильмах
+                "   FROM likes " +
+                "   INNER JOIN films f ON films_id = f.id " + //присоединили к id фильма информацию о нем
+                "   WHERE users_id IN (" +
+                "       SELECT users_id " + //получили id пользователей с максимальным пересечением по лайкам
+                "       FROM (" +
+                "           SELECT users_id, COUNT(films_id) AS amount " +
+                "           FROM likes " +
+                "           WHERE films_id IN (" +
+                "               SELECT DISTINCT films_id " +
+                "               FROM likes " +
+                "               WHERE users_id = ?" +
+                "           ) AND users_id != ? " + //исключили пользователя из выборки
+                "           GROUP BY users_id " +
+                "           ORDER BY amount DESC) " +
+                "       WHERE amount = (" +
+                "           SELECT MAX(amount) AS max_intersection_by_likes " + //получили значение максимального
+                "           FROM (" +                                           //пересечения по лайкам
+                "               SELECT COUNT(films_id) AS amount " +
+                "               FROM likes " +
+                "               WHERE films_id IN (" +
+                "                   SELECT DISTINCT films_id " + //получили id фильмов, которым пользователь поставил лайк
+                "                   FROM likes " +
+                "                   WHERE users_id = ?" +
+                "               ) AND users_id != ? " + //исключили пользователя из выборки
+                "               GROUP BY users_id" +
+                "           )" +
+                "       )" +
+                "   ) AND films_id NOT IN (SELECT films_id FROM likes WHERE users_id = ?)" +
+                ") AS tb1 " +
+                "LEFT JOIN mpa AS m ON tb1.mpa_id = m.id " + //присоединили данные из таблицы mpa
+                "LEFT JOIN films_genres AS fg ON tb1.id = fg.films_id " +
+                "LEFT JOIN genres AS g ON g.id = fg.genres_id"; //присоединили данные из таблицы genres
+
+        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, userId, userId, userId, userId, userId);
+
+        return makeFilms(sqlRowSet);
+    }
+
 }

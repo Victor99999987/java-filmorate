@@ -5,8 +5,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UserAlreadyExistException;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.Storage;
+import ru.yandex.practicum.filmorate.storage.impl.db.DbFilmStorage;
 
 import java.util.HashSet;
 import java.util.List;
@@ -17,9 +19,11 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final Storage<User> userStorage;
+    private final DbFilmStorage filmStorage;
 
-    public UserService(@Qualifier("DbUserStorage") Storage<User> userStorage) {
+    public UserService(@Qualifier("DbUserStorage") Storage<User> userStorage, DbFilmStorage filmStorage) {
         this.userStorage = userStorage;
+        this.filmStorage = filmStorage;
     }
 
     public List<User> getAll() {
@@ -88,6 +92,11 @@ public class UserService {
         return friends.stream()
                 .map(userStorage::getById)
                 .collect(Collectors.toList());
+    }
+
+    public List<Film> getMovieRecommendations(Long userId) {
+        //getById(Long.valueOf(userId));
+        return filmStorage.getMovieRecommendations(userId);
     }
 
 }
