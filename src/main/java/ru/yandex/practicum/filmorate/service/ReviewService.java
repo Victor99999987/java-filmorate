@@ -31,8 +31,8 @@ public class ReviewService {
         return updatedReview;
     }
 
-    public void delete(long id) {
-        reviewStorage.remove(id);
+    public Review delete(long id) {
+        return reviewStorage.remove(id);
     }
 
     public Review findById(long id) {

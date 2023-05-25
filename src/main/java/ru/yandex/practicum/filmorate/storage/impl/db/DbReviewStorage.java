@@ -92,9 +92,8 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         Review review = getById(id);
         if (jdbcTemplate.update(deleteReview, id) < 1) {
             throw new ReviewNotFoundException("Ошибка при удалении отзыва с ID = " + id + ".");
-        } else {
-            log.info("Отзыв с ID = {} удален.", id);
         }
+        log.info("Отзыв с ID = {} удален.", id);
         return review;
     }
 
