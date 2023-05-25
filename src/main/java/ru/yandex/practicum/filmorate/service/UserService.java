@@ -95,7 +95,7 @@ public class UserService {
     }
 
     public List<Film> getMovieRecommendations(Integer userId) {
-        getById(Long.valueOf(userId));
+        //getById(Long.valueOf(userId));
         return filmStorage.getMovieRecommendations(userId);
     }
 
