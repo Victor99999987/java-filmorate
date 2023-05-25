@@ -25,6 +25,20 @@ import java.util.List;
 @Qualifier("DbEventStorage")
 public class DbEventStorage extends DbStorage implements Storage<Event> {
 
+    private final String selectSQL = "(" +
+            "select e.id, e.timestmp, e.users_id, e.eventtype, e.operation, e.entitys_users_id as entitys_id  \n" +
+            "from events as e\n" +
+            "where e.entitys_users_id is not null and_condition\n" +
+            "union\n" +
+            "select e.id, e.timestmp, e.users_id, e.eventtype, e.operation, e.entitys_films_id as entitys_id  \n" +
+            "from events as e\n" +
+            "where e.entitys_films_id is not null and_condition\n" +
+            "union \n" +
+            "select e.id, e.timestmp, e.users_id, e.eventtype, e.operation, e.entitys_reviews_id as entitys_id  \n" +
+            "from events as e\n" +
+            "where e.entitys_reviews_id is not null and_condition\n" +
+            ") order by timestmp desc; ";
+
     public DbEventStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
@@ -32,7 +46,7 @@ public class DbEventStorage extends DbStorage implements Storage<Event> {
     @Override
     public List<Event> getAll() {
         List<Event> result = new ArrayList<>();
-        String sql = "select id, timestmp, users_id, eventtype, operation, entitys_id from events order by timestmp desc";
+        String sql = selectSQL.replaceAll("and_condition", "");
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
         while (sqlRowSet.next()) {
             result.add(makeEvent(sqlRowSet));
@@ -42,8 +56,8 @@ public class DbEventStorage extends DbStorage implements Storage<Event> {
 
     @Override
     public Event getById(Long id) {
-        String sql = "select id, timestmp, users_id, eventtype, operation, entitys_id from events where id = ?";
-        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id);
+        String sql = selectSQL.replaceAll("and_condition", "and e.id = " + id);
+        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
         if (!sqlRowSet.first()) {
             log.info(String.format("EventNotFoundException: Не найдено событие с id=%d", id));
             throw new EventNotFoundException(String.format("Не найдено событие с id=%d", id));
@@ -57,11 +71,22 @@ public class DbEventStorage extends DbStorage implements Storage<Event> {
             log.info("ValidationEventException: При добавлении события id должен быть null");
             throw new ValidationEventException("При добавлении события id должен быть null");
         }
-        GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
         String sql = "insert into events (timestmp, users_id, eventtype, operation, entitys_id) values(?, ?, ?, ?, ?)";
+        switch (event.getEventType()){
+            case LIKE:
+                sql = sql.replace("entitys_id", "entitys_films_id");
+                break;
+            case FRIEND:
+                sql = sql.replace("entitys_id", "entitys_users_id");
+                break;
+            case REVIEW:
+                sql = sql.replace("entitys_id", "entitys_reviews_id");
+                break;
+        }
+        GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
+        String finalSql = sql;
         jdbcTemplate.update(conn -> {
-            PreparedStatement preparedStatement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            //preparedStatement.setTimestamp(1, Timestamp.from(Instant.ofEpochMilli(event.getTimestamp())));
+            PreparedStatement preparedStatement = conn.prepareStatement(finalSql, Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setLong(1, event.getTimestamp());
             preparedStatement.setLong(2, event.getUserId());
             preparedStatement.setString(3, event.getEventType().toString());
@@ -85,6 +110,17 @@ public class DbEventStorage extends DbStorage implements Storage<Event> {
     public Event update(Event event) {
         getById(event.getEventId());
         String sql = "update events set timestmp = ?, users_id = ?, eventtype = ?, operation = ?, entitys_id = ? where id = ?";
+        switch (event.getEventType()){
+            case LIKE:
+                sql = sql.replace("entitys_id", "entitys_films_id");
+                break;
+            case FRIEND:
+                sql = sql.replace("entitys_id", "entitys_users_id");
+                break;
+            case REVIEW:
+                sql = sql.replace("entitys_id", "entitys_reviews_id");
+                break;
+        }
         jdbcTemplate.update(sql, event.getTimestamp(), event.getUserId(), event.getEventType(), event.getEntityId(),
                 event.getOperation(), event.getEventId());
         return event;
@@ -97,7 +133,7 @@ public class DbEventStorage extends DbStorage implements Storage<Event> {
                 .userId(rs.getLong("users_id"))
                 .eventType(EventType.valueOf(rs.getString("eventtype")))
                 .operation(OperationType.valueOf(rs.getString("operation")))
-                .entityId(rs.getLong("entitys_id"))
+                .entityId(rs.getLong(6))//"entitys_id"
                 .build();
     }
 }
