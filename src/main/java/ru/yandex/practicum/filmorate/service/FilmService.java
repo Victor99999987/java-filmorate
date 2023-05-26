@@ -62,10 +62,6 @@ public class FilmService {
     public Film addLike(Long id, Long userId) {
         Film film = filmStorage.getById(id);
         userStorage.getById(userId);
-        if (film.getLikes().contains(userId)) {
-            log.info(String.format("UserAlreadyExistException: Фильм с id=%d уже лайкнут пользователем с id=%s", id, userId));
-            throw new UserAlreadyExistException(String.format("Фильм с id=%d уже лайкнут пользователем с id=%s", id, userId));
-        }
         film.getLikes().add(userId);
         filmStorage.update(film);
         Event event = Event.builder()
