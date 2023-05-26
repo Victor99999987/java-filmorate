@@ -6,9 +6,11 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UserAlreadyExistException;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.type.EventType;
 import ru.yandex.practicum.filmorate.model.type.OperationType;
+import ru.yandex.practicum.filmorate.storage.EventStorage;
 import ru.yandex.practicum.filmorate.storage.Storage;
 import ru.yandex.practicum.filmorate.storage.impl.db.DbFilmStorage;
 
@@ -22,12 +24,12 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final Storage<User> userStorage;
-    private final Storage<Event> eventStorage;
+    private final EventStorage eventStorage;
     private final DbFilmStorage filmStorage;
 
     public UserService(@Qualifier("DbUserStorage") Storage<User> userStorage,
-                       @Qualifier("DbEventStorage") Storage<Event> eventStorage) {
-    public UserService(@Qualifier("DbUserStorage") Storage<User> userStorage, DbFilmStorage filmStorage) {
+                       @Qualifier("DbEventStorage") EventStorage eventStorage,
+                       @Qualifier("DbFilmStorage") DbFilmStorage filmStorage) {
         this.userStorage = userStorage;
         this.eventStorage = eventStorage;
         this.filmStorage = filmStorage;
