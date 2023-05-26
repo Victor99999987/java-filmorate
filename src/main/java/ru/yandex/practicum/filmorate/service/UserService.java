@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.type.EventType;
 import ru.yandex.practicum.filmorate.model.type.OperationType;
 import ru.yandex.practicum.filmorate.storage.Storage;
+import ru.yandex.practicum.filmorate.storage.impl.db.DbFilmStorage;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -22,11 +23,14 @@ import java.util.stream.Collectors;
 public class UserService {
     private final Storage<User> userStorage;
     private final Storage<Event> eventStorage;
+    private final DbFilmStorage filmStorage;
 
     public UserService(@Qualifier("DbUserStorage") Storage<User> userStorage,
                        @Qualifier("DbEventStorage") Storage<Event> eventStorage) {
+    public UserService(@Qualifier("DbUserStorage") Storage<User> userStorage, DbFilmStorage filmStorage) {
         this.userStorage = userStorage;
         this.eventStorage = eventStorage;
+        this.filmStorage = filmStorage;
     }
 
     public List<User> getAll() {
@@ -111,6 +115,11 @@ public class UserService {
         return friends.stream()
                 .map(userStorage::getById)
                 .collect(Collectors.toList());
+    }
+
+    public List<Film> getMovieRecommendations(Long userId) {
+        getById(userId);
+        return filmStorage.getMovieRecommendations(userId);
     }
 
 }
