@@ -11,7 +11,7 @@ import ru.yandex.practicum.filmorate.exception.ValidationEventException;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.type.EventType;
 import ru.yandex.practicum.filmorate.model.type.OperationType;
-import ru.yandex.practicum.filmorate.storage.Storage;
+import ru.yandex.practicum.filmorate.storage.EventStorage;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -21,7 +21,7 @@ import java.util.List;
 @Slf4j
 @Component
 @Qualifier("DbEventStorage")
-public class DbEventStorage extends DbStorage implements Storage<Event> {
+public class DbEventStorage extends DbStorage implements EventStorage {
 
     public DbEventStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
@@ -88,6 +88,18 @@ public class DbEventStorage extends DbStorage implements Storage<Event> {
         return event;
     }
 
+    @Override
+    public List<Event> getFeedByUserId(Long id) {
+        List<Event> result = new ArrayList<>();
+        String sql = "select id, timestmp, users_id, eventtype, operation, entitys_id from events " +
+                "where users_id = ? order by timestmp";
+        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id);
+        while (sqlRowSet.next()) {
+            result.add(makeEvent(sqlRowSet));
+        }
+        return result;
+    }
+
     private Event makeEvent(SqlRowSet rs) {
         return Event.builder()
                 .eventId(rs.getLong("id"))
@@ -98,4 +110,5 @@ public class DbEventStorage extends DbStorage implements Storage<Event> {
                 .entityId(rs.getLong("entitys_id"))
                 .build();
     }
+
 }

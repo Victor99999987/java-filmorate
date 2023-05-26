@@ -5,18 +5,18 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.EventStorage;
 import ru.yandex.practicum.filmorate.storage.Storage;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class EventService {
-    private final Storage<Event> eventStorage;
+    private final EventStorage eventStorage;
     private final Storage<User> userStorage;
 
-    public EventService(@Qualifier("DbEventStorage") Storage<Event> eventStorage,
+    public EventService(@Qualifier("DbEventStorage") EventStorage eventStorage,
                         @Qualifier("DbUserStorage") Storage<User> userStorage) {
         this.eventStorage = eventStorage;
         this.userStorage = userStorage;
@@ -30,9 +30,7 @@ public class EventService {
     public List<Event> getFeedByUserId(Long id) {
         log.info("Запрошена лента событий для пользователя с id = {}.", id);
         userStorage.getById(id);
-        return getAll().stream()
-                .filter(event -> event.getUserId().equals(id))
-                .collect(Collectors.toList());
+        return eventStorage.getFeedByUserId(id);
     }
 
 }
