@@ -186,6 +186,40 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         }
     }
 
+    @Override
+    public List<Film> searchFilms(String query, String by) {
+        List<Film> films;
+        String sql;
+
+        if (by.equalsIgnoreCase("title")) {
+            sql = sqlQueryBaseNoParamYear +
+                    "WHERE lower(f.NAME) LIKE lower('%" + query + "%')";
+
+        } else if (by.equalsIgnoreCase("director")) {
+            sql = sqlQueryBaseNoParamYear +
+                    "WHERE lower(dr.name) LIKE lower('%" + query + "%')";
+
+        } else {
+            sql = sqlQueryBaseNoParamYear +
+                    "WHERE lower(f.NAME) LIKE lower('%" + query + "%') OR " +
+                    "lower(dr.name) LIKE lower('%" + query + "%') " +
+                    "ORDER BY f.ID DESC";
+        }
+
+        SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql);
+        films = makeFilms(sqlRowSet);
+        Collections.sort(films, (f1, f2) -> {
+            int likes1 = f1.getLikes().size();
+            int likes2 = f2.getLikes().size();
+
+            if (likes1 == likes2) {
+                return (int) (f2.getId() - f1.getId());
+            }
+            return likes2 - likes1;
+        });
+        return films;
+    }
+
     private void batchUpd(Film film) {
         String sql = "delete from film_director where film_id = ?";
         jdbcTemplate.update(sql, film.getId());
