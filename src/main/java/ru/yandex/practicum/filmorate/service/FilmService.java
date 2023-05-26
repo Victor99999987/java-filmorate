@@ -104,10 +104,12 @@ public class FilmService {
     }
 
     public List<Film> getFilmsSortByLikesAndYear(Long directorId, String param) {
+        log.info("Собираем отсортированный список фильмов режиссёра");
         return filmStorage.findFilmsSortByLikesAndYear(directorId, param);
     }
 
     public List<Film> searchFilms(String query, String by) {
+        log.info("Собираем список фильмов, отсортированных по популярности");
         return filmStorage.searchFilms(query, by);
     }
 }
