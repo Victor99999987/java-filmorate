@@ -1,11 +1,17 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ReviewNotFoundException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.model.type.EventType;
+import ru.yandex.practicum.filmorate.model.type.OperationType;
 import ru.yandex.practicum.filmorate.storage.ReviewStorage;
+import ru.yandex.practicum.filmorate.storage.Storage;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -14,25 +20,53 @@ import java.util.function.BiFunction;
 @Slf4j
 public class ReviewService {
     private final ReviewStorage reviewStorage;
+    private final Storage<Event> eventStorage;
 
-    public ReviewService(ReviewStorage reviewStorage) {
+    public ReviewService(@Qualifier("DbReviewStorage") ReviewStorage reviewStorage,
+                         @Qualifier("DbEventStorage") Storage<Event> eventStorage) {
         this.reviewStorage = reviewStorage;
+        this.eventStorage = eventStorage;
     }
 
     public Review create(Review review) {
         Review createdReview = reviewStorage.add(review);
         log.info("Добавлен новый отзыв: {}.", createdReview);
+        Event event = Event.builder()
+                .timestamp(Instant.now().toEpochMilli())
+                .userId(createdReview.getUserId())
+                .operation(OperationType.ADD)
+                .eventType(EventType.REVIEW)
+                .entityId(createdReview.getReviewId())
+                .build();
+        eventStorage.add(event);
         return createdReview;
     }
 
     public Review update(Review review) {
         Review updatedReview = reviewStorage.update(review);
         log.info("Обновлен отзыв: {}.", updatedReview);
+        Event event = Event.builder()
+                .timestamp(Instant.now().toEpochMilli())
+                .userId(updatedReview.getUserId())
+                .operation(OperationType.UPDATE)
+                .eventType(EventType.REVIEW)
+                .entityId(updatedReview.getReviewId())
+                .build();
+        eventStorage.add(event);
         return updatedReview;
     }
 
     public Review delete(long id) {
-        return reviewStorage.remove(id);
+        Review review = reviewStorage.remove(id);
+        Event event = Event.builder()
+                .timestamp(Instant.now().toEpochMilli())
+                .userId(review.getUserId())
+                .operation(OperationType.REMOVE)
+                .eventType(EventType.REVIEW)
+                .entityId(review.getReviewId())
+                .build();
+        eventStorage.add(event);
+        return review;
     }
 
     public Review findById(long id) {

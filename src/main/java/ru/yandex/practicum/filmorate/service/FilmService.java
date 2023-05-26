@@ -6,12 +6,16 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UserAlreadyExistException;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationFilmException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.type.EventType;
+import ru.yandex.practicum.filmorate.model.type.OperationType;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.Storage;
 
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,14 +26,17 @@ import java.util.stream.Stream;
 public class FilmService {
     private final Storage<User> userStorage;
     private final Storage<Genre> genreStorage;
+    private final Storage<Event> eventStorage;
     private final FilmStorage filmStorage;
 
     public FilmService(@Qualifier("DbFilmStorage") FilmStorage filmStorage,
                        @Qualifier("DbUserStorage") Storage<User> userStorage,
-                       @Qualifier("DbGenreStorage") Storage<Genre> genreStorage) {
+                       @Qualifier("DbGenreStorage") Storage<Genre> genreStorage,
+                       @Qualifier("DbEventStorage") Storage<Event> eventStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
         this.genreStorage = genreStorage;
+        this.eventStorage = eventStorage;
     }
 
     public List<Film> getAll() {
@@ -61,6 +68,14 @@ public class FilmService {
         }
         film.getLikes().add(userId);
         filmStorage.update(film);
+        Event event = Event.builder()
+                .timestamp(Instant.now().toEpochMilli())
+                .userId(userId)
+                .operation(OperationType.ADD)
+                .eventType(EventType.LIKE)
+                .entityId(id)
+                .build();
+        eventStorage.add(event);
         return film;
     }
 
@@ -73,6 +88,14 @@ public class FilmService {
         }
         film.getLikes().remove(userId);
         filmStorage.update(film);
+        Event event = Event.builder()
+                .timestamp(Instant.now().toEpochMilli())
+                .userId(userId)
+                .operation(OperationType.REMOVE)
+                .eventType(EventType.LIKE)
+                .entityId(id)
+                .build();
+        eventStorage.add(event);
         return film;
     }
 
