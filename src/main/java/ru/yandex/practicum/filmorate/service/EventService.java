@@ -23,10 +23,12 @@ public class EventService {
     }
 
     public List<Event> getAll() {
+        log.info("Запрошена лента всех событий");
         return eventStorage.getAll();
     }
 
     public List<Event> getFeedByUserId(Long id) {
+        log.info("Запрошена лента событий для пользователя с id = {}.", id);
         userStorage.getById(id);
         return getAll().stream()
                 .filter(event -> event.getUserId().equals(id))
