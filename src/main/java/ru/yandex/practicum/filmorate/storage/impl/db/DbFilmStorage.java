@@ -176,7 +176,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
             case LIKES:
                 String sqlLikes = sqlQueryBaseLikes +
                         "WHERE dr.DIRECTOR_ID = ?\n" +
-                        "GROUP BY f.ID " +
+                        "GROUP BY f.ID, L.USERS_ID " +
                         "ORDER BY likes";
 
                 SqlRowSet sqlRowSetLikes = jdbcTemplate.queryForRowSet(sqlLikes, directorId);
@@ -184,7 +184,6 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
 
             default:
                 throw new ValidationSortException("Неверный параметр сортировки");
-
         }
     }
 
