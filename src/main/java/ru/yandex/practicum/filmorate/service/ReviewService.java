@@ -74,7 +74,7 @@ public class ReviewService {
         return reviewStorage.getById(id);
     }
 
-    public Collection<Review> findReviewByIdFilm(Long filmId, int count) {
+    public Collection<Review> findAllReviews(Long filmId, int count) {
         Collection<Review> reviews;
         if (filmId == null) {
             reviews = reviewStorage.getReviewByCount(count);
