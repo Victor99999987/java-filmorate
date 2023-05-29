@@ -14,6 +14,7 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.type.RequestType;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.sql.Date;
@@ -152,16 +153,17 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
     @Override
     public List<Film> findFilmsSortByLikesAndYear(Long directorId, String param) {
         directorStorage.checkIfDirectorExists(directorStorage.getById(directorId));
+        RequestType requestType = RequestType.getType(param);
 
-        switch (param) {
-            case "noParam":
+        switch (requestType) {
+            case NO_PARAM:
                 String sqlNoParam = sqlQueryBaseNoParamYear +
                         "WHERE dr.DIRECTOR_ID = ?";
                 SqlRowSet sqlRowSetNoParam = jdbcTemplate.queryForRowSet(sqlNoParam, directorId);
 
                 return makeFilms(sqlRowSetNoParam);
 
-            case "year":
+            case YEAR:
                 String sqlYear = sqlQueryBaseNoParamYear +
                         "WHERE dr.DIRECTOR_ID = ?\n" +
                         "ORDER BY (f.RELEASEDATE)";
@@ -171,7 +173,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
                 Collections.reverse(films);
                 return films;
 
-            case "likes":
+            case LIKES:
                 String sqlLikes = sqlQueryBaseLikes +
                         "WHERE dr.DIRECTOR_ID = ?\n" +
                         "GROUP BY f.ID " +
