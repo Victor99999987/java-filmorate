@@ -43,22 +43,29 @@
 
 ### Лента событий
 Добавлена возможность просмотра последних событий на платформе — добавление в друзья, удаление из друзей, лайки и отзывы, которые оставили друзья пользователя.
-***GET /users/{id}/feed***
+
+Общая лента событий ***GET /feed***
+
+Лента событий пользоателя ***GET /users/{id}/feed***
 > Исполнитель: Воложанин Виктор
 
 ### Рекомендации
 Реализована простая рекомендательную система для фильмов.
+
 ***GET /users/{id}/recommendations***
 > Исполнитель: Жеребцов Артем
 
 ### Общие фильмы
 Реализован вывод общих с другом фильмов с сортировкой по их популярности.
+
 ***GET /films/common?userId={userId}&friendId={friendId}***
 > Исполнитель: Лаптева Евгения
 
 ### Удаление фильмов и пользователей
 Добавлен функционал для удаления фильма и пользователя по идентификатору.
+
 ***DELETE /users/{userId}***
+
 ***DELETE /films/{filmId}***
 > Исполнитель: Воложанин Виктор
 
@@ -71,7 +78,9 @@
 > Исполнитель: Карпова Елизавета
 
 ### Поиск
-Добавлен функционал для поиска фильмов по названию и по режиссёру. ***GET /fimls/search***
+Добавлен функционал для поиска фильмов по названию и по режиссёру.
+
+***GET /fimls/search***
 
 *Параметры строки запроса:*
 1. *query* — текст для поиска
@@ -80,61 +89,3 @@
 
 ER-диаграмма проекта
 ![](/er_diagram/erd.png)
-
-Данная схема позволяет делать основные запросы. Примеры запросов.
-
-GET /users/{id}/friends
-
-Получить список друзей по {id} пользователя
-```
-SELECT *
-FROM users
-WHERE users.id IN (
-                   SELECT friend_id
-                   FROM friendship
-                   WHERE users_id = {id}
-                   AND confirmed = true
-                 );
-```
-
-Получение списка список друзей, общих с другим пользователем
-
-GET /users/{id}/friends/common/{otherId} 
-
-```
-SELECT *
-FROM users
-WHERE users.id IN (
-                   SELECT friend_id 
-                   FROM friendship 
-                   WHERE users_id = {id}
-                   AND confirmed = true 
-                   AND friend_id IN (
-                                     SELECT friend_id 
-                                     FROM friendship 
-                                     WHERE users_id = {otherId}
-                                     AND confirmed = true 
-                                    )
-                  );
-```
-
-Возвращает список из первых count фильмов по количеству лайков.
-
-GET /films/popular?count={count}
-
-```
-SELECT films.id,
-       films.name,
-       films.description,
-       films.releaseDate,
-       films.duration,
-       ratings.name AS rating,
-       COUNT(films.id) AS likes
-FROM films
-INNER JOIN likes ON films.id = likes.films_id
-INNER JOIN users ON users.id = likes.users_id
-INNER JOIN ratings ON ratings.id = films.ratings_id
-GROUP BY films.id
-ORDER BY likes DESC
-LIMIT {count}
-```
