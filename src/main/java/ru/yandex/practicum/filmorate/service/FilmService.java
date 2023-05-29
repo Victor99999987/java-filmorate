@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.type.EventType;
 import ru.yandex.practicum.filmorate.model.type.OperationType;
+import ru.yandex.practicum.filmorate.model.type.RequestType;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.Storage;
 
@@ -121,9 +122,9 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
-    public List<Film> getFilmsSortByLikesAndYear(Long directorId, String param) {
+    public List<Film> getFilmsSortByLikesAndYear(Long directorId, RequestType requestType) {
         log.info("Собираем отсортированный список фильмов режиссёра");
-        return filmStorage.findFilmsSortByLikesAndYear(directorId, param);
+        return filmStorage.findFilmsSortByLikesAndYear(directorId, requestType);
     }
 
     public List<Film> searchFilms(String query, String by) {

@@ -151,9 +151,8 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> findFilmsSortByLikesAndYear(Long directorId, String param) {
+    public List<Film> findFilmsSortByLikesAndYear(Long directorId, RequestType requestType) {
         directorStorage.checkIfDirectorExists(directorStorage.getById(directorId));
-        RequestType requestType = RequestType.getType(param);
 
         switch (requestType) {
             case NO_PARAM:
