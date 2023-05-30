@@ -35,13 +35,15 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     private final String UPDATE_USEFUL_PLUS = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
     private final String UPDATE_USEFUL_MINUS = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
 
+    private final String FIND_ALL_REVIEWS = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC";
+
     public DbReviewStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
     @Override
     public List<Review> getAll() {
-        String findAllReviews = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC";
+        String findAllReviews = FIND_ALL_REVIEWS;
         return jdbcTemplate.query(findAllReviews, (rs, rowNum) -> buildReview(rs));
     }
 
@@ -99,7 +101,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Collection<Review> getReviewByCount(int count) {
-        String findAllReviews = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC LIMIT ?";
+        String findAllReviews = FIND_ALL_REVIEWS + " LIMIT ?";
         return jdbcTemplate.query(findAllReviews, (rs, rowNum) -> buildReview(rs), count);
     }
 
@@ -191,6 +193,19 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         }
     }
 
+    public void verifyReview(long reviewId) {
+        Optional<Review> reviewOptional = Optional.ofNullable(getById(reviewId));
+        if (reviewOptional.isEmpty()) {
+            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
+        }
+    }
+
+    public boolean verifyLike(long reviewId, long userId) {
+        String verifyLike = "SELECT IS_LIKE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
+        return Boolean.TRUE
+                .equals(jdbcTemplate.queryForObject(verifyLike, Boolean.class, reviewId, userId));
+    }
+
     private Review buildReview(ResultSet rs) throws SQLException {
         return Review.builder()
                 .reviewId(rs.getLong("review_id"))
@@ -218,16 +233,4 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         }
     }
 
-    public void verifyReview(long reviewId) {
-        Optional<Review> reviewOptional = Optional.ofNullable(getById(reviewId));
-        if (reviewOptional.isEmpty()) {
-            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
-        }
-    }
-
-    public boolean verifyLike(long reviewId, long userId) {
-        String verifyLike = "SELECT IS_LIKE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
-        return Boolean.TRUE
-                .equals(jdbcTemplate.queryForObject(verifyLike, Boolean.class, reviewId, userId));
-    }
 }
