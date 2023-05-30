@@ -14,6 +14,7 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.type.RequestType;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.sql.Date;
@@ -28,7 +29,12 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
 
     private final DbDirectorStorage directorStorage;
 
-    private final String SQL_QUERY_BASE_NO_PARAM_YEAR = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
+    public DbFilmStorage(JdbcTemplate jdbcTemplate, DbDirectorStorage directorStorage) {
+        super(jdbcTemplate);
+        this.directorStorage = directorStorage;
+    }
+
+    private final String sqlQueryBaseNoParamYear = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
             "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
             "dr.director_id as director_id, dr.name as DIRECTOR_NAME \n" +
             "from films as f \n" +
@@ -39,7 +45,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
             "left join film_director fd on f.id=fd.film_id\n" +
             "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n";
 
-    private final String SQL_QUERY_BASE_LIKES = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
+    private final String sqlQueryBaseLikes = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
             "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
             "dr.director_id as director_id, dr.name as DIRECTOR_NAME, count(l.USERS_ID) as likes \n" +
             "from films as f \n" +
@@ -50,20 +56,15 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
             "left join film_director fd on f.id=fd.film_id\n" +
             "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n";
 
-    public DbFilmStorage(JdbcTemplate jdbcTemplate, DbDirectorStorage directorStorage) {
-        super(jdbcTemplate);
-        this.directorStorage = directorStorage;
-    }
-
     @Override
     public List<Film> getAll() {
-        return makeFilms(jdbcTemplate.queryForRowSet(SQL_QUERY_BASE_NO_PARAM_YEAR));
+        return makeFilms(jdbcTemplate.queryForRowSet(sqlQueryBaseNoParamYear));
     }
 
 
     @Override
     public Film getById(Long id) {
-        String sql = SQL_QUERY_BASE_NO_PARAM_YEAR + "where f.id = ?";
+        String sql = sqlQueryBaseNoParamYear + "where f.id = ?";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (!sqlRowSet.first()) {
             log.info(String.format("FilmNotFoundException: Не найден фильм с id=%d", id));
@@ -150,19 +151,19 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> findFilmsSortByLikesAndYear(Long directorId, String param) {
+    public List<Film> findFilmsSortByLikesAndYear(Long directorId, RequestType requestType) {
         directorStorage.checkIfDirectorExists(directorStorage.getById(directorId));
 
-        switch (param) {
-            case "noParam":
-                String sqlNoParam = SQL_QUERY_BASE_NO_PARAM_YEAR +
+        switch (requestType) {
+            case NO_PARAM:
+                String sqlNoParam = sqlQueryBaseNoParamYear +
                         "WHERE dr.DIRECTOR_ID = ?";
                 SqlRowSet sqlRowSetNoParam = jdbcTemplate.queryForRowSet(sqlNoParam, directorId);
 
                 return makeFilms(sqlRowSetNoParam);
 
-            case "year":
-                String sqlYear = SQL_QUERY_BASE_NO_PARAM_YEAR +
+            case YEAR:
+                String sqlYear = sqlQueryBaseNoParamYear +
                         "WHERE dr.DIRECTOR_ID = ?\n" +
                         "ORDER BY (f.RELEASEDATE)";
 
@@ -171,10 +172,10 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
                 Collections.reverse(films);
                 return films;
 
-            case "likes":
-                String sqlLikes = SQL_QUERY_BASE_LIKES +
+            case LIKES:
+                String sqlLikes = sqlQueryBaseLikes +
                         "WHERE dr.DIRECTOR_ID = ?\n" +
-                        "GROUP BY f.ID " +
+                        "GROUP BY f.ID, L.USERS_ID " +
                         "ORDER BY likes";
 
                 SqlRowSet sqlRowSetLikes = jdbcTemplate.queryForRowSet(sqlLikes, directorId);
@@ -182,7 +183,6 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
 
             default:
                 throw new ValidationSortException("Неверный параметр сортировки");
-
         }
     }
 
@@ -192,15 +192,15 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         String sql;
 
         if (by.equalsIgnoreCase("title")) {
-            sql = SQL_QUERY_BASE_NO_PARAM_YEAR +
+            sql = sqlQueryBaseNoParamYear +
                     "WHERE lower(f.NAME) LIKE lower('%" + query + "%')";
 
         } else if (by.equalsIgnoreCase("director")) {
-            sql = SQL_QUERY_BASE_NO_PARAM_YEAR +
+            sql = sqlQueryBaseNoParamYear +
                     "WHERE lower(dr.name) LIKE lower('%" + query + "%')";
 
         } else {
-            sql = SQL_QUERY_BASE_NO_PARAM_YEAR +
+            sql = sqlQueryBaseNoParamYear +
                     "WHERE lower(f.NAME) LIKE lower('%" + query + "%') OR " +
                     "lower(dr.name) LIKE lower('%" + query + "%') " +
                     "ORDER BY f.ID DESC";

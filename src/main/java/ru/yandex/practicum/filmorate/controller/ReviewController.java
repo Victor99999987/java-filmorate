@@ -40,10 +40,10 @@ public class ReviewController {
     }
 
     @GetMapping
-    public Collection<Review> findAllByIdFilm(
+    public Collection<Review> findAllReviews(
             @RequestParam(required = false) Long filmId,
             @RequestParam(defaultValue = "10", required = false) int count) {
-        return service.findReviewByIdFilm(filmId, count);
+        return service.findAllReviews(filmId, count);
     }
 
     @PutMapping("{id}/like/{userId}")

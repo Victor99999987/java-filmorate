@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.type.RequestType;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.Valid;
@@ -70,7 +71,8 @@ public class FilmController {
     @GetMapping("/director/{directorId}")
     public List<Film> getFilmsSortByLikesAndYear(@PathVariable Long directorId,
                                                  @RequestParam(name = "sortBy") Optional<String> paramSort) {
-        return filmService.getFilmsSortByLikesAndYear(directorId, paramSort.orElse("noParam"));
+        RequestType requestType = RequestType.getType(paramSort.orElse("noParam"));
+        return filmService.getFilmsSortByLikesAndYear(directorId, requestType);
     }
 
     @GetMapping("/search")
