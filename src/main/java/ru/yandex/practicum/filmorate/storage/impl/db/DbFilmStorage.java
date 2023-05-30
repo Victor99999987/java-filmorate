@@ -29,7 +29,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
 
     private final DbDirectorStorage directorStorage;
 
-    private final String SQL_QUERY_BASE_NOPARAM_YEAR = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
+    private final String SQL_QUERY_BASE_NO_PARAM_YEAR = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
             "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
             "dr.director_id as director_id, dr.name as DIRECTOR_NAME \n" +
             "from films as f \n" +
@@ -58,12 +58,12 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
 
     @Override
     public List<Film> getAll() {
-        return makeFilms(jdbcTemplate.queryForRowSet(SQL_QUERY_BASE_NOPARAM_YEAR));
+        return makeFilms(jdbcTemplate.queryForRowSet(SQL_QUERY_BASE_NO_PARAM_YEAR));
     }
 
     @Override
     public Film getById(Long id) {
-        String sql = SQL_QUERY_BASE_NOPARAM_YEAR + "where f.id = ?";
+        String sql = SQL_QUERY_BASE_NO_PARAM_YEAR + "where f.id = ?";
         SqlRowSet sqlRowSet = jdbcTemplate.queryForRowSet(sql, id);
         if (!sqlRowSet.first()) {
             log.info(String.format("FilmNotFoundException: Не найден фильм с id=%d", id));
@@ -154,14 +154,14 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
 
         switch (requestType) {
             case NO_PARAM:
-                String sqlNoParam = SQL_QUERY_BASE_NOPARAM_YEAR +
+                String sqlNoParam = SQL_QUERY_BASE_NO_PARAM_YEAR +
                         "WHERE dr.DIRECTOR_ID = ?";
                 SqlRowSet sqlRowSetNoParam = jdbcTemplate.queryForRowSet(sqlNoParam, directorId);
 
                 return makeFilms(sqlRowSetNoParam);
 
             case YEAR:
-                String sqlYear = SQL_QUERY_BASE_NOPARAM_YEAR +
+                String sqlYear = SQL_QUERY_BASE_NO_PARAM_YEAR +
                         "WHERE dr.DIRECTOR_ID = ?\n" +
                         "ORDER BY (f.RELEASEDATE)";
 
@@ -190,15 +190,15 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         String sql;
 
         if (by.equalsIgnoreCase("title")) {
-            sql = SQL_QUERY_BASE_NOPARAM_YEAR +
+            sql = SQL_QUERY_BASE_NO_PARAM_YEAR +
                     "WHERE lower(f.NAME) LIKE lower('%" + query + "%')";
 
         } else if (by.equalsIgnoreCase("director")) {
-            sql = SQL_QUERY_BASE_NOPARAM_YEAR +
+            sql = SQL_QUERY_BASE_NO_PARAM_YEAR +
                     "WHERE lower(dr.name) LIKE lower('%" + query + "%')";
 
         } else {
-            sql = SQL_QUERY_BASE_NOPARAM_YEAR +
+            sql = SQL_QUERY_BASE_NO_PARAM_YEAR +
                     "WHERE lower(f.NAME) LIKE lower('%" + query + "%') OR " +
                     "lower(dr.name) LIKE lower('%" + query + "%') " +
                     "ORDER BY f.ID DESC";
