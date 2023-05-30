@@ -61,7 +61,6 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         return makeFilms(jdbcTemplate.queryForRowSet(SQL_QUERY_BASE_NOPARAM_YEAR));
     }
 
-
     @Override
     public Film getById(Long id) {
         String sql = SQL_QUERY_BASE_NOPARAM_YEAR + "where f.id = ?";
@@ -73,8 +72,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
         sqlRowSet.beforeFirst();
         return makeFilms(sqlRowSet).get(0);
     }
-
-
+    
     @Override
     public Film add(Film film) {
         if (film.getId() != null) {

@@ -29,15 +29,15 @@ import java.util.Optional;
 @Qualifier("DbReviewStorage")
 public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
+    private final String INSERT_LIKE_REVIEW = "INSERT INTO REVIEWS_LIKES (REVIEW_ID, USER_ID, IS_LIKE) " +
+            "VALUES (?, ?, ?)";
+    private final String DELETE_LIKE_REVIEW = "DELETE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
+    private final String UPDATE_USEFUL_PLUS = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
+    private final String UPDATE_USEFUL_MINUS = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
+
     public DbReviewStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
-
-    private final String insertLikeReview = "INSERT INTO REVIEWS_LIKES (REVIEW_ID, USER_ID, IS_LIKE) " +
-            "VALUES (?, ?, ?)";
-    private final String deleteLikeReview = "DELETE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
-    private final String updateUsefulPlus = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
-    private final String updateUsefulMinus = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
 
     @Override
     public List<Review> getAll() {
@@ -116,8 +116,8 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         verifyUser(userId);
         verifyReview(reviewId);
         try {
-            if (jdbcTemplate.update(insertLikeReview, reviewId, userId, true) > 0) {
-                jdbcTemplate.update(updateUsefulPlus, reviewId);
+            if (jdbcTemplate.update(INSERT_LIKE_REVIEW, reviewId, userId, true) > 0) {
+                jdbcTemplate.update(UPDATE_USEFUL_PLUS, reviewId);
                 log.info("Пользователь с ID = {} добавил лайк для отзыва ID = {}.", userId, reviewId);
                 return Optional.ofNullable(getById(reviewId));
             } else {
@@ -136,8 +136,8 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         verifyUser(userId);
         verifyReview(reviewId);
         try {
-            if (jdbcTemplate.update(insertLikeReview, reviewId, userId, false) > 0) {
-                jdbcTemplate.update(updateUsefulMinus, reviewId);
+            if (jdbcTemplate.update(INSERT_LIKE_REVIEW, reviewId, userId, false) > 0) {
+                jdbcTemplate.update(UPDATE_USEFUL_MINUS, reviewId);
                 log.info("Пользователь с ID = {} добавил дизлайк для отзыва ID = {}.", userId, reviewId);
                 return Optional.ofNullable(getById(reviewId));
             } else {
@@ -156,13 +156,13 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         verifyUser(userId);
         verifyReview(reviewId);
         if (verifyLike(reviewId, userId)) {
-            if (jdbcTemplate.update(deleteLikeReview, reviewId, userId) < 1) {
+            if (jdbcTemplate.update(DELETE_LIKE_REVIEW, reviewId, userId) < 1) {
                 log.info("Ошибка при удалении лайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
                 throw new ReviewIncorrectLikeException(String
                         .format("Ошибка при удалении лайка для отзыва ID = %d от пользователя с ID = %d.",
                                 reviewId, userId));
             } else {
-                jdbcTemplate.update(updateUsefulMinus, reviewId);
+                jdbcTemplate.update(UPDATE_USEFUL_MINUS, reviewId);
                 log.info("Пользователь с ID = {} удалил лайк для отзыва ID = {}.", userId, reviewId);
                 return Optional.ofNullable(getById(reviewId));
             }
@@ -176,13 +176,13 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         verifyUser(userId);
         verifyReview(reviewId);
         if (!verifyLike(reviewId, userId)) {
-            if (jdbcTemplate.update(deleteLikeReview, reviewId, userId) < 1) {
+            if (jdbcTemplate.update(DELETE_LIKE_REVIEW, reviewId, userId) < 1) {
                 log.info("Ошибка при удалении дизлайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
                 throw new ReviewIncorrectLikeException(String
                         .format("Ошибка при удалении дизлайка для отзыва ID = %d от пользователя с ID = %d.",
                                 reviewId, userId));
             } else {
-                jdbcTemplate.update(updateUsefulPlus, reviewId);
+                jdbcTemplate.update(UPDATE_USEFUL_PLUS, reviewId);
                 log.info("Пользователь с ID = {} удалил дизлайк для отзыва ID = {}.", userId, reviewId);
                 return Optional.ofNullable(getById(reviewId));
             }
