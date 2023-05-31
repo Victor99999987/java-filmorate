@@ -106,13 +106,12 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     public Collection<Review> getReviewByIdFilm(Long filmId, int count) {
         String findAllReviewsByFilm = "SELECT * FROM REVIEWS WHERE FILM_ID = ? " +
                 "ORDER BY USEFUL DESC LIMIT ?";
-//        verifyFilm(filmId);
         return jdbcTemplate.query(findAllReviewsByFilm, (rs, rowNum) -> buildReview(rs), filmId, count);
     }
 
     @Override
     public Optional<Review> addLike(long reviewId, long userId) {
-        verifyReview(reviewId);
+        getById(reviewId);
         try {
             if (jdbcTemplate.update(INSERT_LIKE_REVIEW, reviewId, userId, true) > 0) {
                 jdbcTemplate.update(UPDATE_USEFUL_PLUS, reviewId);
@@ -131,7 +130,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Optional<Review> addDislike(long reviewId, long userId) {
-        verifyReview(reviewId);
+        getById(reviewId);
         try {
             if (jdbcTemplate.update(INSERT_LIKE_REVIEW, reviewId, userId, false) > 0) {
                 jdbcTemplate.update(UPDATE_USEFUL_MINUS, reviewId);
@@ -150,7 +149,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Optional<Review> removeLike(long reviewId, long userId) {
-        verifyReview(reviewId);
+        getById(reviewId);
         if (verifyLike(reviewId, userId)) {
             if (jdbcTemplate.update(DELETE_LIKE_REVIEW, reviewId, userId) < 1) {
                 log.info("Ошибка при удалении лайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
@@ -169,7 +168,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Optional<Review> removeDislike(long reviewId, long userId) {
-        verifyReview(reviewId);
+        getById(reviewId);
         if (!verifyLike(reviewId, userId)) {
             if (jdbcTemplate.update(DELETE_LIKE_REVIEW, reviewId, userId) < 1) {
                 log.info("Ошибка при удалении дизлайка для отзыва ID = {} от пользователя с ID = {}.", reviewId, userId);
@@ -186,14 +185,7 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
         }
     }
 
-    public void verifyReview(long reviewId) {
-        Optional<Review> reviewOptional = Optional.ofNullable(getById(reviewId));
-        if (reviewOptional.isEmpty()) {
-            throw new ReviewNotFoundException("Отзыв с ID = " + reviewId + " не найден.");
-        }
-    }
-
-    public boolean verifyLike(long reviewId, long userId) {
+    private boolean verifyLike(long reviewId, long userId) {
         String verifyLike = "SELECT IS_LIKE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
         return Boolean.TRUE
                 .equals(jdbcTemplate.queryForObject(verifyLike, Boolean.class, reviewId, userId));

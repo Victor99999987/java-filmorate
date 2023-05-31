@@ -67,6 +67,7 @@ public class ReviewService {
     }
 
     public Review delete(long id) {
+
         Review review = reviewStorage.remove(id);
         Event event = Event.builder()
                 .timestamp(Instant.now().toEpochMilli())
