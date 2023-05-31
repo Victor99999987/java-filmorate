@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ReviewNotFoundException;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.type.EventType;
 import ru.yandex.practicum.filmorate.model.type.OperationType;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.ReviewStorage;
 import ru.yandex.practicum.filmorate.storage.Storage;
 
@@ -21,14 +23,22 @@ import java.util.function.BiFunction;
 public class ReviewService {
     private final ReviewStorage reviewStorage;
     private final Storage<Event> eventStorage;
+    private final FilmStorage filmStorage;
+    private final Storage<User> userStorage;
 
     public ReviewService(@Qualifier("DbReviewStorage") ReviewStorage reviewStorage,
-                         @Qualifier("DbEventStorage") Storage<Event> eventStorage) {
+                         @Qualifier("DbEventStorage") Storage<Event> eventStorage,
+                         @Qualifier("DbFilmStorage") FilmStorage filmStorage,
+                         @Qualifier("DbUserStorage") Storage<User> userStorage) {
         this.reviewStorage = reviewStorage;
         this.eventStorage = eventStorage;
+        this.filmStorage = filmStorage;
+        this.userStorage = userStorage;
     }
 
     public Review create(Review review) {
+        userStorage.getById(review.getUserId());
+        filmStorage.getById(review.getFilmId());
         Review createdReview = reviewStorage.add(review);
         log.info("Добавлен новый отзыв: {}.", createdReview);
         Event event = Event.builder()
@@ -80,6 +90,7 @@ public class ReviewService {
             reviews = reviewStorage.getReviewByCount(count);
             log.info("Возвращено {} отзывов.", reviews.size());
         } else {
+            filmStorage.getById(filmId);
             reviews = reviewStorage.getReviewByIdFilm(filmId, count);
             log.info("Возвращено {} отзывов для фильма с ID = {}.", reviews.size(), filmId);
         }
@@ -87,21 +98,25 @@ public class ReviewService {
     }
 
     public Review addLike(long reviewId, long userId) {
+        userStorage.getById(userId);
         return updateReview(reviewId, userId,
                 reviewStorage::addLike, "Отзыв с ID = " + reviewId + " не найден.");
     }
 
     public Review addDislike(long reviewId, long userId) {
+        userStorage.getById(userId);
         return updateReview(reviewId, userId,
                 reviewStorage::addDislike, "Отзыв с ID = " + reviewId + " не найден.");
     }
 
     public Review removeLike(long reviewId, long userId) {
+        userStorage.getById(userId);
         return updateReview(reviewId, userId,
                 reviewStorage::removeLike, "Отзыв с ID = " + reviewId + " не найден.");
     }
 
     public Review removeDislike(long reviewId, long userId) {
+        userStorage.getById(userId);
         return updateReview(reviewId, userId,
                 reviewStorage::removeDislike, "Отзыв с ID = " + reviewId + " не найден.");
     }

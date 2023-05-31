@@ -34,7 +34,6 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     private final String DELETE_LIKE_REVIEW = "DELETE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
     private final String UPDATE_USEFUL_PLUS = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
     private final String UPDATE_USEFUL_MINUS = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
-
     private final String FIND_ALL_REVIEWS = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC";
 
     public DbReviewStorage(JdbcTemplate jdbcTemplate) {
@@ -59,8 +58,6 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Review add(Review review) {
-        verifyFilm(review.getFilmId());
-        verifyUser(review.getUserId());
         GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
         String sql = "INSERT INTO REVIEWS (FILM_ID, USER_ID, CONTENT, IS_POSITIVE) values(?, ?, ?, ?)";
         jdbcTemplate.update(conn -> {
@@ -109,13 +106,12 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
     public Collection<Review> getReviewByIdFilm(Long filmId, int count) {
         String findAllReviewsByFilm = "SELECT * FROM REVIEWS WHERE FILM_ID = ? " +
                 "ORDER BY USEFUL DESC LIMIT ?";
-        verifyFilm(filmId);
+//        verifyFilm(filmId);
         return jdbcTemplate.query(findAllReviewsByFilm, (rs, rowNum) -> buildReview(rs), filmId, count);
     }
 
     @Override
     public Optional<Review> addLike(long reviewId, long userId) {
-        verifyUser(userId);
         verifyReview(reviewId);
         try {
             if (jdbcTemplate.update(INSERT_LIKE_REVIEW, reviewId, userId, true) > 0) {
@@ -135,7 +131,6 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Optional<Review> addDislike(long reviewId, long userId) {
-        verifyUser(userId);
         verifyReview(reviewId);
         try {
             if (jdbcTemplate.update(INSERT_LIKE_REVIEW, reviewId, userId, false) > 0) {
@@ -155,7 +150,6 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Optional<Review> removeLike(long reviewId, long userId) {
-        verifyUser(userId);
         verifyReview(reviewId);
         if (verifyLike(reviewId, userId)) {
             if (jdbcTemplate.update(DELETE_LIKE_REVIEW, reviewId, userId) < 1) {
@@ -175,7 +169,6 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
     @Override
     public Optional<Review> removeDislike(long reviewId, long userId) {
-        verifyUser(userId);
         verifyReview(reviewId);
         if (!verifyLike(reviewId, userId)) {
             if (jdbcTemplate.update(DELETE_LIKE_REVIEW, reviewId, userId) < 1) {
@@ -216,21 +209,4 @@ public class DbReviewStorage extends DbStorage implements ReviewStorage {
                 .useful(rs.getInt("useful"))
                 .build();
     }
-
-    private void verifyUser(long userId) {
-        String findUser = "SELECT ID FROM USERS WHERE ID = ?";
-        SqlRowSet rsUser = jdbcTemplate.queryForRowSet(findUser, userId);
-        if (!rsUser.next()) {
-            throw new UserNotFoundException("Не найден пользователь с ID = " + userId);
-        }
-    }
-
-    private void verifyFilm(long filmId) {
-        String findFilm = "SELECT ID FROM FILMS WHERE ID = ?";
-        SqlRowSet rsFilm = jdbcTemplate.queryForRowSet(findFilm, filmId);
-        if (!rsFilm.next()) {
-            throw new FilmNotFoundException("Не найден фильм с ID = " + filmId);
-        }
-    }
-
 }
