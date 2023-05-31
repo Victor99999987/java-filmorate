@@ -26,12 +26,12 @@ import java.util.Optional;
 @Qualifier("DbReviewStorage")
 public class DbReviewStorage extends DbStorage implements ReviewStorage {
 
-    private static String INSERT_LIKE_REVIEW = "INSERT INTO REVIEWS_LIKES (REVIEW_ID, USER_ID, IS_LIKE) " +
+    private static final String INSERT_LIKE_REVIEW = "INSERT INTO REVIEWS_LIKES (REVIEW_ID, USER_ID, IS_LIKE) " +
             "VALUES (?, ?, ?)";
-    private static String DELETE_LIKE_REVIEW = "DELETE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
-    private static String UPDATE_USEFUL_PLUS = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
-    private static String UPDATE_USEFUL_MINUS = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
-    private static String FIND_ALL_REVIEWS = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC";
+    private static final String DELETE_LIKE_REVIEW = "DELETE FROM REVIEWS_LIKES WHERE REVIEW_ID = ? AND USER_ID = ?";
+    private static final String UPDATE_USEFUL_PLUS = "UPDATE REVIEWS SET USEFUL = USEFUL + 1 WHERE REVIEW_ID = ?";
+    private static final String UPDATE_USEFUL_MINUS = "UPDATE REVIEWS SET USEFUL = USEFUL - 1 WHERE REVIEW_ID = ?";
+    private static final String FIND_ALL_REVIEWS = "SELECT * FROM REVIEWS ORDER BY USEFUL DESC";
 
     public DbReviewStorage(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
