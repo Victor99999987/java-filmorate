@@ -1,22 +1,25 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.EventService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
-@Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+    private final EventService eventService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, EventService eventService) {
         this.userService = userService;
+        this.eventService = eventService;
     }
 
     @GetMapping
@@ -63,4 +66,16 @@ public class UserController {
     public List<User> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
         return userService.getCommonFriends(id, otherId);
     }
+
+    @GetMapping("/{id}/feed")
+    public List<Event> getFeedByUserId(@PathVariable Long id) {
+        return eventService.getFeedByUserId(id);
+    }
+
+
+    @GetMapping("/{id}/recommendations")
+    public List<Film> getMovieRecommendations(@PathVariable("id") Long userId) {
+        return userService.getMovieRecommendations(userId);
+    }
+
 }

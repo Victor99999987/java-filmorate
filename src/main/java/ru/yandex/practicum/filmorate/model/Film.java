@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import ru.yandex.practicum.filmorate.validation.FilmReleaseDate;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
@@ -25,6 +26,7 @@ public class Film {
     @EqualsAndHashCode.Exclude
     private String description;
     @EqualsAndHashCode.Exclude
+    @FilmReleaseDate(message = "Дата релиза не может быть раньше 28 декабря 1895 года.")
     private LocalDate releaseDate;
     @Positive
     @EqualsAndHashCode.Exclude
@@ -35,4 +37,6 @@ public class Film {
     private final Set<Genre> genres = new HashSet<>();
     @EqualsAndHashCode.Exclude
     private Mpa mpa;
+    @EqualsAndHashCode.Exclude
+    private final Set<Director> directors = new HashSet<>();
 }

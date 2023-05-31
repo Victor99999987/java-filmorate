@@ -36,6 +36,19 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleReviewNotFoundException(final ReviewNotFoundException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleDirectorNotFoundException(final DirectorNotFoundException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
+
+    @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleValidationMpaException(final ValidationMpaException e) {
         return new ErrorResponse(e.getMessage());
@@ -55,9 +68,22 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleValidationSortException(final ValidationSortException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleValidationFilmException(final ValidationFilmException e) {
         return new ErrorResponse(e.getMessage());
     }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleDirectorAlreadyExistsException(final DirectorAlreadyExistsException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST) //CONFLICT
@@ -72,8 +98,15 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleReviewIncorrectLikeException(final ReviewIncorrectLikeException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
+    @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleThrowable(final Throwable e) {
+        e.printStackTrace();
         return new ErrorResponse("Произошла непредвиденная ошибка.");
     }
 
