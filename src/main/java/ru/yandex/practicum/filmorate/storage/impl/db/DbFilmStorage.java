@@ -29,7 +29,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
 
     private final DbDirectorStorage directorStorage;
 
-    private final String SQL_QUERY_BASE_NO_PARAM_YEAR = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
+    private final String sQL_QUERY_BASE_NO_PARAM_YEAR = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
             "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
             "dr.director_id as director_id, dr.name as DIRECTOR_NAME \n" +
             "from films as f \n" +
@@ -40,7 +40,7 @@ public class DbFilmStorage extends DbStorage implements FilmStorage {
             "left join film_director fd on f.id=fd.film_id\n" +
             "left join directors dr on fd.director_id=dr.DIRECTOR_ID\n";
 
-    private final String SQL_QUERY_BASE_LIKES = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
+    private final String sQL_QUERY_BASE_LIKES = "select f.id, f.name, f.description, f.releasedate, f.duration, " +
             "f.mpa_id, m.name as mpa_name, fg.genres_id, g.name as genres_name, l.users_id,\n" +
             "dr.director_id as director_id, dr.name as DIRECTOR_NAME, count(l.USERS_ID) as likes \n" +
             "from films as f \n" +
